@@ -348,7 +348,7 @@ func messageToEntry(db *gorm.DB, message types.TtnMapperUplinkMessage, gateway t
 		gatewayDbCache.Store(gateway.GatewayId, gatewayDb.ID)
 	}
 
-	// TODO update Gateway location and last heard
+	// TODO update Gateway location and last heard - use a different microservice for this
 
 	// GatewayTime
 	if gateway.Time != 0 {
