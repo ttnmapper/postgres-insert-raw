@@ -8,9 +8,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/streadway/amqp"
+	"github.com/tkanos/gonfig"
 	"log"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 	"ttnmapper-postgres-insert-raw/types"
@@ -21,7 +21,6 @@ var messageChannel = make(chan amqp.Delivery)
 var (
 	deviceDbCache         sync.Map
 	gatewayDbCache        sync.Map
-	modulationDbCache     sync.Map
 	dataRateDbCache       sync.Map
 	codingRateDbCache     sync.Map
 	frequencyDbCache      sync.Map
@@ -39,13 +38,13 @@ type Configuration struct {
 	AmqpExchange string `env:"AMQP_EXHANGE"`
 	AmqpQueue    string `env:"AMQP_QUEUE"`
 
-	PostgresHost          string
-	PostgresPort          string
-	PostgresUser          string
-	PostgresPassword      string
-	PostgresDatabase      string
-	PostgresDebugLog      bool
-	PostgresInsertThreads int
+	PostgresHost          string `env:"POSTGRES_HOST"`
+	PostgresPort          string `env:"POSTGRES_PORT"`
+	PostgresUser          string `env:"POSTGRES_USER"`
+	PostgresPassword      string `env:"POSTGRES_PASSWORD"`
+	PostgresDatabase      string `env:"POSTGRES_DATABASE"`
+	PostgresDebugLog      bool   `env:"POSTGRES_DEBUG_LOG"`
+	PostgresInsertThreads int    `env:"POSTGRES_INSERT_THREADS"`
 
 	PrometheusPort string
 }
@@ -84,22 +83,12 @@ var (
 
 func main() {
 
-	file, err := os.Open("conf.json")
+	err := gonfig.GetConf("conf.json", &myConfiguration)
 	if err != nil {
-		log.Print(err.Error())
-	}
-	decoder := json.NewDecoder(file)
-	err = decoder.Decode(&myConfiguration)
-	if err != nil {
-		log.Print(err.Error())
-	}
-	err = file.Close()
-	if err != nil {
-		log.Print(err.Error())
+		log.Println(err)
 	}
 
 	log.Printf("[Configuration]\n%s\n", prettyPrint(myConfiguration)) // output: [UserA, UserB]
-	log.Printf("Using configuration: %+v", myConfiguration)           // output: [UserA, UserB]
 
 	http.Handle("/metrics", promhttp.Handler())
 	go func() {
@@ -109,9 +98,10 @@ func main() {
 		}
 	}()
 
-	// Connect to database
+	// Table name prefixes
 	gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTableName string) string {
-		return "ttnmapper_" + defaultTableName
+		//return "ttnmapper_" + defaultTableName
+		return defaultTableName
 	}
 
 	db, err := gorm.Open("postgres", "host="+myConfiguration.PostgresHost+" port="+myConfiguration.PostgresPort+" user="+myConfiguration.PostgresUser+" dbname="+myConfiguration.PostgresDatabase+" password="+myConfiguration.PostgresPassword+"")
@@ -125,6 +115,7 @@ func main() {
 	}
 
 	// Create tables if they do not exist
+	log.Println("Performing auto migrate")
 	db.AutoMigrate(
 		&types.Packet{},
 		&types.Device{},
@@ -140,16 +131,14 @@ func main() {
 	)
 
 	// Start threads to handle Postgres inserts
+	log.Println("Starting database insert threads")
 	for i := 0; i < myConfiguration.PostgresInsertThreads; i++ {
 		go insertToPostgres(i+1, db)
 	}
 
 	// Start amqp listener on this thread - blocking function
+	log.Println("Starting AMQP thread")
 	subscribeToRabbit()
-
-	log.Printf("Init Complete")
-	forever := make(chan bool)
-	<-forever
 }
 
 func subscribeToRabbit() {
@@ -211,23 +200,26 @@ func subscribeToRabbit() {
 	// Start thread that listens for new amqp messages
 	go func() {
 		for d := range msgs {
+			log.Print(" [a] Packet received")
 			messageChannel <- d
 		}
 	}()
+
+	log.Printf("Init Complete")
+	forever := make(chan bool)
+	<-forever
 }
 
 func insertToPostgres(thread int, db *gorm.DB) {
 	// Wait for a message and insert it into Postgres
-	for {
-		d := <-messageChannel
-		log.Printf("[%d][m] Processing packet", thread)
+	for d := range messageChannel {
+		log.Printf("[%d][p] Processing packet", thread)
 
 		var message types.TtnMapperUplinkMessage
 		if err := json.Unmarshal(d.Body, &message); err != nil {
-			log.Print(" [a] " + err.Error())
+			log.Print("[%d][p] "+err.Error(), thread)
 			continue
 		}
-		log.Print(" [a] Packet received")
 
 		for _, gateway := range message.Gateways {
 			gatewayStart := time.Now()
@@ -238,9 +230,11 @@ func insertToPostgres(thread int, db *gorm.DB) {
 				continue
 			}
 
+			prettyPrint(entry)
+
 			err = db.Create(&entry).Error
 			if err == nil {
-				log.Printf("[%d] [m] Inserted entry", thread)
+				log.Printf("[%d][p] Inserted entry", thread)
 				dbInserts.Inc()
 			} else {
 				failOnError(err, "PG Insert")
@@ -251,6 +245,7 @@ func insertToPostgres(thread int, db *gorm.DB) {
 		}
 
 		// TODO: only ack if insert was successful
+		log.Println("Acking amqp message")
 		d.Ack(false)
 
 	}

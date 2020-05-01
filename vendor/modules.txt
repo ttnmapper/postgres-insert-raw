@@ -1,5 +1,8 @@
 # github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973
 github.com/beorn7/perks/quantile
+# github.com/ghodss/yaml v1.0.0
+## explicit
+github.com/ghodss/yaml
 # github.com/golang/protobuf v1.2.0
 github.com/golang/protobuf/proto
 # github.com/jinzhu/gorm v1.9.11
@@ -37,3 +40,8 @@ github.com/prometheus/procfs/xfs
 # github.com/streadway/amqp v0.0.0-20181205114330-a314942b2fd9
 ## explicit
 github.com/streadway/amqp
+# github.com/tkanos/gonfig v0.0.0-20181112185242-896f3d81fadf
+## explicit
+github.com/tkanos/gonfig
+# gopkg.in/yaml.v2 v2.2.2
+gopkg.in/yaml.v2
