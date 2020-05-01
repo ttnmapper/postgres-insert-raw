@@ -46,7 +46,7 @@ type Configuration struct {
 	PostgresDebugLog      bool   `env:"POSTGRES_DEBUG_LOG"`
 	PostgresInsertThreads int    `env:"POSTGRES_INSERT_THREADS"`
 
-	PrometheusPort string
+	PrometheusPort string `env:"PROMETHEUS_PORT"`
 }
 
 var myConfiguration = Configuration{
