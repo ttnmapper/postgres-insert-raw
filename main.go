@@ -10,6 +10,7 @@ import (
 	"github.com/streadway/amqp"
 	"github.com/tkanos/gonfig"
 	"log"
+	"math"
 	"net/http"
 	"sync"
 	"time"
@@ -215,38 +216,42 @@ func insertToPostgres(thread int, db *gorm.DB) {
 	for d := range messageChannel {
 		log.Printf("[%d][p] Processing packet", thread)
 
+		// The message form amqp is a json string. Unmarshal to ttnmapper uplink struct
 		var message types.TtnMapperUplinkMessage
 		if err := json.Unmarshal(d.Body, &message); err != nil {
 			log.Print("[%d][p] "+err.Error(), thread)
 			continue
 		}
 
+		// Iterate gateways. We store it flat in the database
 		for _, gateway := range message.Gateways {
 			gatewayStart := time.Now()
 
+			// Copy required fields in correct format into a database row struct
 			entry, err := messageToEntry(db, message, gateway)
 			if err != nil {
 				log.Printf(err.Error())
 				continue
 			}
 
-			prettyPrint(entry)
-
+			// Insert into database
 			err = db.Create(&entry).Error
 			if err == nil {
 				log.Printf("[%d][p] Inserted entry", thread)
 				dbInserts.Inc()
+				d.Ack(false)
 			} else {
-				failOnError(err, "PG Insert")
+				log.Println(prettyPrint(entry))
+				log.Print("[%d][p] PG Insert", thread)
+				failOnError(err, "")
 			}
 
+			// Prometheus stats
 			gatewayElapsed := time.Since(gatewayStart)
 			insertDuration.Observe(float64(gatewayElapsed.Nanoseconds()) / 1000.0 / 1000.0) //nanoseconds to milliseconds
 		}
 
 		// TODO: only ack if insert was successful
-		log.Println("Acking amqp message")
-		d.Ack(false)
 
 	}
 }
@@ -402,7 +407,8 @@ func messageToEntry(db *gorm.DB, message types.TtnMapperUplinkMessage, gateway t
 		entry.Satellites = &message.Satellites
 	}
 	if message.Hdop != 0 {
-		entry.Hdop = &message.Hdop
+		hdop := math.Min(message.Hdop, 999.9) // database field is 3.1 - cap otherwise we get an error
+		entry.Hdop = &hdop
 	}
 
 	// AccuracySourceID
