@@ -239,7 +239,6 @@ func insertToPostgres(thread int, db *gorm.DB) {
 			if err == nil {
 				log.Printf("[%d][p] Inserted entry", thread)
 				dbInserts.Inc()
-				d.Ack(false)
 			} else {
 				log.Println(prettyPrint(entry))
 				log.Print("[%d][p] PG Insert", thread)
@@ -251,7 +250,8 @@ func insertToPostgres(thread int, db *gorm.DB) {
 			insertDuration.Observe(float64(gatewayElapsed.Nanoseconds()) / 1000.0 / 1000.0) //nanoseconds to milliseconds
 		}
 
-		// TODO: only ack if insert was successful
+		// If we get here all inserts were successful. Otherwise we would have quit.
+		d.Ack(false)
 
 	}
 }
