@@ -399,9 +399,15 @@ func messageToEntry(db *gorm.DB, message types.TtnMapperUplinkMessage, gateway t
 	// Latitude, Longitude, Altitude, AccuracyMeters, Satellites, Hdop
 	entry.Latitude = message.Latitude
 	entry.Longitude = message.Longitude
-	entry.Altitude = message.Altitude
+
+	altitude := message.Altitude
+	altitude = math.Min(altitude, 99999.9)  // cap to numeric(6,1)
+	altitude = math.Max(altitude, -99999.9) // cap to numeric(6,1)
+	entry.Altitude = altitude
+
 	if message.AccuracyMeters != 0 {
-		entry.AccuracyMeters = &message.AccuracyMeters
+		accuracy := math.Min(message.AccuracyMeters, 9999.99) // cap to numeric(6,2)
+		entry.AccuracyMeters = &accuracy
 	}
 	if message.Satellites != 0 {
 		entry.Satellites = &message.Satellites
