@@ -18,7 +18,7 @@ type Packet struct {
 	CodingRateID uint
 
 	// Gateway data
-	GatewayID              uint `gorm:"not null;index=gateway"`
+	AntennaID              uint `gorm:"not null;index=antenna"`
 	GatewayTime            *time.Time
 	Timestamp              *uint32
 	FineTimestamp          *uint64
@@ -49,7 +49,7 @@ type Device struct {
 	ID      uint
 	AppId   string `gorm:"UNIQUE_INDEX:app_device"`
 	DevId   string `gorm:"UNIQUE_INDEX:app_device"`
-	DevEui  string `gorm:"UNIQUE_INDEX:app_device"`
+	DevEui  string // EUI is like a description, and can change
 	Packets []Packet
 }
 
@@ -98,11 +98,32 @@ type UserAgent struct {
 	Packets []Packet
 }
 
+// TODO: Currently we identify a gateway using the gateway ID provided by the network.
+// But how are we going to identify them between networks, when data is sent via the packet broker?
+
+type Antenna struct {
+	ID uint
+
+	// TTN gateway ID along with the Antenna index identifies a unique coverage area.
+	NetworkId    string `gorm:"type:varchar(36);UNIQUE_INDEX:gtw_id_antenna"`
+	GatewayId    string `gorm:"type:varchar(36);UNIQUE_INDEX:gtw_id_antenna"`
+	AntennaIndex uint8  `gorm:"UNIQUE_INDEX:gtw_id_antenna"`
+
+	// For now we do not set antenna locations, but add it here for future use
+	//Latitude         *float64
+	//Longitude        *float64
+	//Altitude         *int32
+
+	Packets []Packet
+}
+
 type Gateway struct {
-	ID           uint
-	GtwId        string `gorm:"UNIQUE_INDEX:gtw_id_eui_antenna"`
-	GtwEui       string `gorm:"UNIQUE_INDEX:gtw_id_eui_antenna"`
-	AntennaIndex uint8  `gorm:"UNIQUE_INDEX:gtw_id_eui_antenna"`
+	ID uint
+
+	NetworkId   string `gorm:"type:varchar(36);UNIQUE_INDEX:idx_gtw_id"`
+	GatewayId   string `gorm:"type:varchar(36);UNIQUE_INDEX:idx_gtw_id"`
+	GatewayEui  *string
+	Description *string
 
 	Latitude         *float64
 	Longitude        *float64
@@ -110,9 +131,31 @@ type Gateway struct {
 	LocationAccuracy *int32
 	LocationSource   *string
 
-	LastHeard time.Time
+	//AtLocationSince	time.Time // This value gets updated when the gateway moves
+	LastHeard time.Time // This value always gets updated to reflect that the gateway is working
 
-	Packets []Packet
+	Antennas         []Antenna
+	GatewayLocations []GatewayLocation
+}
+
+type GatewayLocation struct {
+	ID        uint
+	NetworkId string `gorm:"type:varchar(36);INDEX=idx_gtw_id_install"`
+	GatewayId string `gorm:"type:varchar(36);INDEX=idx_gtw_id_install"`
+
+	InstalledAt time.Time `gorm:"INDEX=idx_gtw_id_install"`
+	Latitude    float64
+	Longitude   float64
+}
+
+// To blacklist a gateway set its location to 0,0
+type GatewayLocationForce struct {
+	ID        uint
+	NetworkId string `gorm:"type:varchar(36);UNIQUE_INDEX:idx_gtw_id"`
+	GatewayId string `gorm:"type:varchar(36);UNIQUE_INDEX:idx_gtw_id"`
+
+	Latitude  float64
+	Longitude float64
 }
 
 type FineTimestampKeyID struct {
@@ -122,14 +165,18 @@ type FineTimestampKeyID struct {
 
 // Indexers: These structs are the same as the ones above, but used to index the cache maps
 type DeviceIndexer struct {
-	DevId  string
-	AppId  string
-	DevEui string
+	DevId string
+	AppId string
 }
 
 type GatewayIndexer struct {
-	GtwId        string
-	GtwEui       string
+	NetworkId string
+	GatewayId string
+}
+
+type AntennaIndexer struct {
+	NetworkId    string
+	GatewayId    string
 	AntennaIndex uint8
 }
 

@@ -21,7 +21,7 @@ var messageChannel = make(chan amqp.Delivery)
 
 var (
 	deviceDbCache         sync.Map
-	gatewayDbCache        sync.Map
+	antennaDbCache        sync.Map
 	dataRateDbCache       sync.Map
 	codingRateDbCache     sync.Map
 	frequencyDbCache      sync.Map
@@ -127,7 +127,7 @@ func main() {
 		&types.Experiment{},
 		&types.User{},
 		&types.UserAgent{},
-		&types.Gateway{},
+		&types.Antenna{},
 		&types.FineTimestampKeyID{},
 	)
 
@@ -259,13 +259,16 @@ func insertToPostgres(thread int, db *gorm.DB) {
 func messageToEntry(db *gorm.DB, message types.TtnMapperUplinkMessage, gateway types.TtnMapperGateway) (types.Packet, error) {
 	var entry = types.Packet{}
 
+	// Packet broker metadata will provide network id. For now assume TTN
+	gateway.NetworkId = "thethingsnetwork.org"
+
 	// Time
 	seconds := message.Time / 1000000000
 	nanos := message.Time % 1000000000
 	entry.Time = time.Unix(seconds, nanos)
 
 	// DeviceID
-	deviceIndexer := types.DeviceIndexer{AppId: message.AppID, DevId: message.DevID, DevEui: message.DevEui}
+	deviceIndexer := types.DeviceIndexer{AppId: message.AppID, DevId: message.DevID}
 	i, ok := deviceDbCache.Load(deviceIndexer)
 	if ok {
 		entry.DeviceID = i.(uint)
@@ -334,21 +337,17 @@ func messageToEntry(db *gorm.DB, message types.TtnMapperUplinkMessage, gateway t
 		codingRateDbCache.Store(message.CodingRate, codingRateDb.ID)
 	}
 
-	// GatewayID
-	i, ok = gatewayDbCache.Load(gateway.GatewayId)
+	// AntennaID - packets are stored with a pointer to the antenna that received it. A network has multiple gateways, a gateway has multiple antennas.
+	// We therefore store coverage data per antenna, assuming antenna index 0 when we don't know the antenna index.
+	antennaIndexer := types.AntennaIndexer{NetworkId: gateway.NetworkId, GatewayId: gateway.GatewayId, AntennaIndex: gateway.AntennaIndex}
+	i, ok = antennaDbCache.Load(antennaIndexer)
 	if ok {
-		entry.GatewayID = i.(uint)
+		entry.AntennaID = i.(uint)
 	} else {
-		gatewayDb := types.Gateway{GtwId: gateway.GatewayId, GtwEui: gateway.GatewayEui}
-		err := db.FirstOrCreate(&gatewayDb, &gatewayDb).Error
-		if err != nil {
-			return entry, err
-		}
-		entry.GatewayID = gatewayDb.ID
-		gatewayDbCache.Store(gateway.GatewayId, gatewayDb.ID)
+		antennaDb := types.Antenna{NetworkId: gateway.NetworkId, GatewayId: gateway.GatewayId, AntennaIndex: gateway.AntennaIndex}
+		entry.AntennaID = antennaDb.ID
+		antennaDbCache.Store(antennaIndexer, antennaDb.ID)
 	}
-
-	// TODO update Gateway location and last heard - use a different microservice for this
 
 	// GatewayTime
 	if gateway.Time != 0 {
