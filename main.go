@@ -10,7 +10,6 @@ import (
 	"github.com/streadway/amqp"
 	"github.com/tkanos/gonfig"
 	"log"
-	"math"
 	"net/http"
 	"sync"
 	"time"
@@ -219,7 +218,7 @@ func insertToPostgres(thread int, db *gorm.DB) {
 		// The message form amqp is a json string. Unmarshal to ttnmapper uplink struct
 		var message types.TtnMapperUplinkMessage
 		if err := json.Unmarshal(d.Body, &message); err != nil {
-			log.Print("[%d][p] "+err.Error(), thread)
+			log.Printf("[%d][p] "+err.Error(), thread)
 			continue
 		}
 
@@ -396,23 +395,19 @@ func messageToEntry(db *gorm.DB, message types.TtnMapperUplinkMessage, gateway t
 	}
 
 	// Latitude, Longitude, Altitude, AccuracyMeters, Satellites, Hdop
-	entry.Latitude = message.Latitude
-	entry.Longitude = message.Longitude
-
-	altitude := message.Altitude
-	altitude = math.Min(altitude, 99999.9)  // cap to numeric(6,1)
-	altitude = math.Max(altitude, -99999.9) // cap to numeric(6,1)
-	entry.Altitude = altitude
+	entry.Latitude = capFloatTo(message.Latitude, 10, 6)
+	entry.Longitude = capFloatTo(message.Longitude, 10, 6)
+	entry.Altitude = capFloatTo(message.Altitude, 6, 1)
 
 	if message.AccuracyMeters != 0 {
-		accuracy := math.Min(message.AccuracyMeters, 9999.99) // cap to numeric(6,2)
+		accuracy := capFloatTo(message.AccuracyMeters, 6, 2)
 		entry.AccuracyMeters = &accuracy
 	}
 	if message.Satellites != 0 {
 		entry.Satellites = &message.Satellites
 	}
 	if message.Hdop != 0 {
-		hdop := math.Min(message.Hdop, 999.9) // database field is 3.1 - cap otherwise we get an error
+		hdop := capFloatTo(message.Hdop, 3, 1)
 		entry.Hdop = &hdop
 	}
 
