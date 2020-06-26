@@ -16,27 +16,14 @@ import (
 	"ttnmapper-postgres-insert-raw/types"
 )
 
-var messageChannel = make(chan amqp.Delivery)
-
-var (
-	deviceDbCache         sync.Map
-	antennaDbCache        sync.Map
-	dataRateDbCache       sync.Map
-	codingRateDbCache     sync.Map
-	frequencyDbCache      sync.Map
-	accuracySourceDbCache sync.Map
-	userAgentDbCache      sync.Map
-	userIdDbCache         sync.Map
-	experimentNameDbCache sync.Map
-)
-
 type Configuration struct {
-	AmqpHost     string `env:"AMQP_HOST"`
-	AmqpPort     string `env:"AMQP_PORT"`
-	AmqpUser     string `env:"AMQP_USER"`
-	AmqpPassword string `env:"AMQP_PASSWORD"`
-	AmqpExchange string `env:"AMQP_EXHANGE"`
-	AmqpQueue    string `env:"AMQP_QUEUE"`
+	AmqpHost                 string `env:"AMQP_HOST"`
+	AmqpPort                 string `env:"AMQP_PORT"`
+	AmqpUser                 string `env:"AMQP_USER"`
+	AmqpPassword             string `env:"AMQP_PASSWORD"`
+	AmqpExchangeRawData      string `env:"AMQP_EXHANGE_RAW"`
+	AmqpQueue                string `env:"AMQP_QUEUE"`
+	AmqpExchangeInsertedData string `env:"AMQP_EXHANGE_INSERTED"`
 
 	PostgresHost          string `env:"POSTGRES_HOST"`
 	PostgresPort          string `env:"POSTGRES_PORT"`
@@ -50,12 +37,13 @@ type Configuration struct {
 }
 
 var myConfiguration = Configuration{
-	AmqpHost:     "localhost",
-	AmqpPort:     "5672",
-	AmqpUser:     "user",
-	AmqpPassword: "password",
-	AmqpExchange: "new_packets",
-	AmqpQueue:    "postgres_insert_raw",
+	AmqpHost:                 "localhost",
+	AmqpPort:                 "5672",
+	AmqpUser:                 "user",
+	AmqpPassword:             "password",
+	AmqpExchangeRawData:      "new_packets",
+	AmqpQueue:                "postgres_insert_raw",
+	AmqpExchangeInsertedData: "new_inserted_data",
 
 	PostgresHost:          "localhost",
 	PostgresPort:          "5432",
@@ -79,6 +67,19 @@ var (
 		Help:    "How long the processing and insert of a packet takes",
 		Buckets: []float64{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.5, 2, 5, 10, 100, 1000, 10000},
 	})
+
+	deviceDbCache         sync.Map
+	antennaDbCache        sync.Map
+	dataRateDbCache       sync.Map
+	codingRateDbCache     sync.Map
+	frequencyDbCache      sync.Map
+	accuracySourceDbCache sync.Map
+	userAgentDbCache      sync.Map
+	userIdDbCache         sync.Map
+	experimentNameDbCache sync.Map
+
+	messageChannel  = make(chan amqp.Delivery)
+	insertedChannel = make(chan types.TtnMapperUplinkMessage)
 )
 
 func main() {
@@ -104,7 +105,8 @@ func main() {
 		return defaultTableName
 	}
 
-	db, err := gorm.Open("postgres", "host="+myConfiguration.PostgresHost+" port="+myConfiguration.PostgresPort+" user="+myConfiguration.PostgresUser+" dbname="+myConfiguration.PostgresDatabase+" password="+myConfiguration.PostgresPassword+"")
+	// pq: unsupported sslmode "prefer"; only "require" (default), "verify-full", "verify-ca", and "disable" supported - so we disable it
+	db, err := gorm.Open("postgres", "host="+myConfiguration.PostgresHost+" port="+myConfiguration.PostgresPort+" user="+myConfiguration.PostgresUser+" dbname="+myConfiguration.PostgresDatabase+" password="+myConfiguration.PostgresPassword+" sslmode=disable")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -136,6 +138,9 @@ func main() {
 		go insertToPostgres(i+1, db)
 	}
 
+	// Start thread that published inserted messages to amqp
+	publishToAmqpNewInsertedData()
+
 	// Start amqp listener on this thread - blocking function
 	log.Println("Starting AMQP thread")
 	subscribeToRabbit()
@@ -151,13 +156,13 @@ func subscribeToRabbit() {
 	defer ch.Close()
 
 	err = ch.ExchangeDeclare(
-		myConfiguration.AmqpExchange, // name
-		"fanout",                     // type
-		true,                         // durable
-		false,                        // auto-deleted
-		false,                        // internal
-		false,                        // no-wait
-		nil,                          // arguments
+		myConfiguration.AmqpExchangeRawData, // name
+		"fanout",                            // type
+		true,                                // durable
+		false,                               // auto-deleted
+		false,                               // internal
+		false,                               // no-wait
+		nil,                                 // arguments
 	)
 	failOnError(err, "Failed to declare an exchange")
 
@@ -179,9 +184,9 @@ func subscribeToRabbit() {
 	failOnError(err, "Failed to set queue QoS")
 
 	err = ch.QueueBind(
-		q.Name,                       // queue name
-		"",                           // routing key
-		myConfiguration.AmqpExchange, // exchange
+		q.Name,                              // queue name
+		"",                                  // routing key
+		myConfiguration.AmqpExchangeRawData, // exchange
 		false,
 		nil)
 	failOnError(err, "Failed to bind a queue")
@@ -251,6 +256,8 @@ func insertToPostgres(thread int, db *gorm.DB) {
 
 		// If we get here all inserts were successful. Otherwise we would have quit.
 		d.Ack(false)
+
+		insertedChannel <- message
 
 	}
 }
@@ -471,4 +478,48 @@ func messageToEntry(db *gorm.DB, message types.TtnMapperUplinkMessage, gateway t
 	}
 
 	return entry, nil
+}
+
+func publishToAmqpNewInsertedData() {
+	go func() {
+		newDataAmqpConn, err := amqp.Dial("amqp://" + myConfiguration.AmqpUser + ":" + myConfiguration.AmqpPassword + "@" + myConfiguration.AmqpHost + ":" + myConfiguration.AmqpPort + "/")
+		failOnError(err, "Failed to connect to RabbitMQ")
+		defer newDataAmqpConn.Close()
+
+		newDataAmqpChannel, err := newDataAmqpConn.Channel()
+		failOnError(err, "Failed to open a channel")
+		defer newDataAmqpChannel.Close()
+
+		err = newDataAmqpChannel.ExchangeDeclare(
+			myConfiguration.AmqpExchangeInsertedData, // name
+			"fanout",                                 // type
+			true,                                     // durable
+			false,                                    // auto-deleted
+			false,                                    // internal
+			false,                                    // no-wait
+			nil,                                      // arguments
+		)
+		failOnError(err, "Failed to declare an exchange")
+
+		for message := range insertedChannel {
+			messageJsonData, err := json.Marshal(message)
+			if err != nil {
+				log.Println("\t\tCan't marshal message to json")
+				return
+			}
+
+			err = newDataAmqpChannel.Publish(
+				myConfiguration.AmqpExchangeInsertedData, // exchange
+				"",                                       // routing key
+				false,                                    // mandatory
+				false,                                    // immediate
+				amqp.Publishing{
+					ContentType: "text/plain",
+					Body:        messageJsonData,
+				})
+			failOnError(err, "Failed to publish a message")
+
+			log.Printf("[I] Published inserted to AMQP exchange")
+		}
+	}()
 }
