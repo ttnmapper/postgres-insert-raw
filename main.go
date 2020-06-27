@@ -21,9 +21,9 @@ type Configuration struct {
 	AmqpPort                 string `env:"AMQP_PORT"`
 	AmqpUser                 string `env:"AMQP_USER"`
 	AmqpPassword             string `env:"AMQP_PASSWORD"`
-	AmqpExchangeRawData      string `env:"AMQP_EXHANGE_RAW"`
+	AmqpExchangeRawData      string `env:"AMQP_EXCHANGE_RAW"`
 	AmqpQueue                string `env:"AMQP_QUEUE"`
-	AmqpExchangeInsertedData string `env:"AMQP_EXHANGE_INSERTED"`
+	AmqpExchangeInsertedData string `env:"AMQP_EXCHANGE_INSERTED"`
 
 	PostgresHost          string `env:"POSTGRES_HOST"`
 	PostgresPort          string `env:"POSTGRES_PORT"`
@@ -43,7 +43,7 @@ var myConfiguration = Configuration{
 	AmqpPassword:             "password",
 	AmqpExchangeRawData:      "new_packets",
 	AmqpQueue:                "postgres_insert_raw",
-	AmqpExchangeInsertedData: "new_inserted_data",
+	AmqpExchangeInsertedData: "inserted_data",
 
 	PostgresHost:          "localhost",
 	PostgresPort:          "5432",
@@ -351,6 +351,10 @@ func messageToEntry(db *gorm.DB, message types.TtnMapperUplinkMessage, gateway t
 		entry.AntennaID = i.(uint)
 	} else {
 		antennaDb := types.Antenna{NetworkId: gateway.NetworkId, GatewayId: gateway.GatewayId, AntennaIndex: gateway.AntennaIndex}
+		err := db.FirstOrCreate(&antennaDb, &antennaDb).Error
+		if err != nil {
+			return entry, err
+		}
 		entry.AntennaID = antennaDb.ID
 		antennaDbCache.Store(antennaIndexer, antennaDb.ID)
 	}
@@ -397,9 +401,7 @@ func messageToEntry(db *gorm.DB, message types.TtnMapperUplinkMessage, gateway t
 	if gateway.SignalRssi != 0 {
 		entry.SignalRssi = &gateway.SignalRssi
 	}
-	if gateway.Snr != 0 {
-		entry.Snr = &gateway.Snr
-	}
+	entry.Snr = gateway.Snr
 
 	// Latitude, Longitude, Altitude, AccuracyMeters, Satellites, Hdop
 	entry.Latitude = capFloatTo(message.Latitude, 10, 6)
