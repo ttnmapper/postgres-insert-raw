@@ -266,7 +266,7 @@ func messageToEntry(db *gorm.DB, message types.TtnMapperUplinkMessage, gateway t
 	var entry = types.Packet{}
 
 	// Packet broker metadata will provide network id. For now assume TTN
-	gateway.NetworkId = "thethingsnetwork.org"
+	gateway.NetworkId = message.NetworkType + "://" + message.NetworkAddress
 
 	// Time
 	seconds := message.Time / 1000000000
@@ -504,6 +504,7 @@ func publishToAmqpNewInsertedData() {
 		failOnError(err, "Failed to declare an exchange")
 
 		for message := range insertedChannel {
+
 			messageJsonData, err := json.Marshal(message)
 			if err != nil {
 				log.Println("\t\tCan't marshal message to json")
