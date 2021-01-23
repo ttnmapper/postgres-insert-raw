@@ -267,6 +267,7 @@ func messageToEntry(db *gorm.DB, message types.TtnMapperUplinkMessage, gateway t
 
 	// Packet broker metadata will provide network id. For now assume TTN
 	gateway.NetworkId = message.NetworkType + "://" + message.NetworkAddress
+	log.Println("Network ID=", gateway.NetworkId)
 
 	// Time
 	seconds := message.Time / 1000000000
