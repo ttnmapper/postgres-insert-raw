@@ -49,7 +49,7 @@ type Device struct {
 	ID      uint
 	AppId   string `gorm:"UNIQUE_INDEX:app_device"`
 	DevId   string `gorm:"UNIQUE_INDEX:app_device"`
-	DevEui  string // EUI is like a description, and can change
+	DevEui  string `gorm:"UNIQUE_INDEX:app_device"`
 	Packets []Packet
 }
 
@@ -165,8 +165,9 @@ type FineTimestampKeyID struct {
 
 // Indexers: These structs are the same as the ones above, but used to index the cache maps
 type DeviceIndexer struct {
-	DevId string
-	AppId string
+	DevId  string
+	AppId  string
+	DevEui string
 }
 
 type GatewayIndexer struct {

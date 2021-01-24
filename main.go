@@ -267,7 +267,7 @@ func messageToEntry(db *gorm.DB, message types.TtnMapperUplinkMessage, gateway t
 
 	// Packet broker metadata will provide network id. For now assume TTN
 	gateway.NetworkId = message.NetworkType + "://" + message.NetworkAddress
-	log.Println("Network ID=", gateway.NetworkId)
+	log.Println("Network ID =", gateway.NetworkId)
 
 	// Time
 	seconds := message.Time / 1000000000
@@ -275,14 +275,12 @@ func messageToEntry(db *gorm.DB, message types.TtnMapperUplinkMessage, gateway t
 	entry.Time = time.Unix(seconds, nanos)
 
 	// DeviceID
-	deviceIndexer := types.DeviceIndexer{AppId: message.AppID, DevId: message.DevID}
-	log.Println(deviceIndexer)
+	deviceIndexer := types.DeviceIndexer{AppId: message.AppID, DevId: message.DevID, DevEui: message.DevEui}
 	i, ok := deviceDbCache.Load(deviceIndexer)
 	if ok {
-		log.Println("Device from cache")
 		entry.DeviceID = i.(uint)
 	} else {
-		log.Println("Device from db")
+		log.Println("Get or create device from/in DB:", deviceIndexer)
 		deviceDb := types.Device{AppId: message.AppID, DevId: message.DevID, DevEui: message.DevEui}
 		err := db.FirstOrCreate(&deviceDb, &deviceDb).Error
 		if err != nil {
