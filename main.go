@@ -276,10 +276,13 @@ func messageToEntry(db *gorm.DB, message types.TtnMapperUplinkMessage, gateway t
 
 	// DeviceID
 	deviceIndexer := types.DeviceIndexer{AppId: message.AppID, DevId: message.DevID}
+	log.Println(deviceIndexer)
 	i, ok := deviceDbCache.Load(deviceIndexer)
 	if ok {
+		log.Println("Device from cache")
 		entry.DeviceID = i.(uint)
 	} else {
+		log.Println("Device from db")
 		deviceDb := types.Device{AppId: message.AppID, DevId: message.DevID, DevEui: message.DevEui}
 		err := db.FirstOrCreate(&deviceDb, &deviceDb).Error
 		if err != nil {
