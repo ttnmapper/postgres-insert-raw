@@ -47,9 +47,9 @@ type Packet struct {
 
 type Device struct {
 	ID      uint
-	AppId   string `gorm:"UNIQUE_INDEX:app_device"`
-	DevId   string `gorm:"UNIQUE_INDEX:app_device"`
-	DevEui  string `gorm:"UNIQUE_INDEX:app_device"`
+	AppId   string `gorm:"UNIQUE_INDEX:app_device_eui"`
+	DevId   string `gorm:"UNIQUE_INDEX:app_device_eui"`
+	DevEui  string `gorm:"UNIQUE_INDEX:app_device_eui"`
 	Packets []Packet
 }
 
