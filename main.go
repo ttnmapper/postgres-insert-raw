@@ -113,12 +113,13 @@ func main() {
 	defer db.Close()
 
 	if myConfiguration.PostgresDebugLog {
+		log.Println("Database debug logging enabled")
 		db.LogMode(true)
 	}
 
 	// Create tables if they do not exist
 	log.Println("Performing auto migrate")
-	db.AutoMigrate(
+	if err := db.AutoMigrate(
 		&types.Packet{},
 		&types.Device{},
 		&types.Frequency{},
@@ -130,7 +131,9 @@ func main() {
 		&types.UserAgent{},
 		&types.Antenna{},
 		&types.FineTimestampKeyID{},
-	)
+	).Error; err != nil {
+		log.Println("Unable autoMigrateDB - " + err.Error())
+	}
 
 	// Start threads to handle Postgres inserts
 	log.Println("Starting database insert threads")

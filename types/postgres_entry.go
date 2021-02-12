@@ -6,9 +6,9 @@ import (
 
 type Packet struct {
 	ID   uint
-	Time time.Time `gorm:"not null;index=time"`
+	Time time.Time `gorm:"not null;index:packets_time_index"`
 
-	DeviceID uint `gorm:"not null;index=device"`
+	DeviceID uint `gorm:"not null;index:packets_device_id_index"`
 
 	FPort uint8
 	FCnt  uint32
@@ -18,7 +18,7 @@ type Packet struct {
 	CodingRateID uint
 
 	// Gateway data
-	AntennaID              uint `gorm:"not null;index=antenna"`
+	AntennaID              uint `gorm:"not null;index:packets_antenna_id_index"`
 	GatewayTime            *time.Time
 	Timestamp              *uint32
 	FineTimestamp          *uint64
@@ -29,8 +29,8 @@ type Packet struct {
 	SignalRssi             *float32 `gorm:"type:numeric(6,2)"`
 	Snr                    float32  `gorm:"type:numeric(5,2)"`
 
-	Latitude         float64  `gorm:"not null;type:numeric(10,6);index:latitude"`
-	Longitude        float64  `gorm:"not null;type:numeric(10,6);index:longitude"`
+	Latitude         float64  `gorm:"not null;type:numeric(10,6);index:packets_latitude_index"`
+	Longitude        float64  `gorm:"not null;type:numeric(10,6);index:packets_longitude_index"`
 	Altitude         float64  `gorm:"type:numeric(6,1)"`
 	AccuracyMeters   *float64 `gorm:"type:numeric(6,2)"`
 	Satellites       *int32
