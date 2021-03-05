@@ -6,9 +6,9 @@ import (
 
 type Packet struct {
 	ID   uint
-	Time time.Time `gorm:"not null;index:packets_time_index"`
+	Time time.Time `gorm:"not null;index:idx_packets_time"`
 
-	DeviceID uint `gorm:"not null;index:packets_device_id_index"`
+	DeviceID uint `gorm:"not null;index:idx_packets_device_id"`
 
 	FPort uint8
 	FCnt  uint32
@@ -18,7 +18,7 @@ type Packet struct {
 	CodingRateID uint
 
 	// Gateway data
-	AntennaID              uint `gorm:"not null;index:packets_antenna_id_index"`
+	AntennaID              uint `gorm:"not null;index:idx_packets_antenna_id"`
 	GatewayTime            *time.Time
 	Timestamp              *uint32
 	FineTimestamp          *uint64
@@ -29,8 +29,8 @@ type Packet struct {
 	SignalRssi             *float32 `gorm:"type:numeric(6,2)"`
 	Snr                    float32  `gorm:"type:numeric(5,2)"`
 
-	Latitude         float64  `gorm:"not null;type:numeric(10,6);index:packets_latitude_index"`
-	Longitude        float64  `gorm:"not null;type:numeric(10,6);index:packets_longitude_index"`
+	Latitude         float64  `gorm:"not null;type:numeric(10,6);index:idx_packets_latitude"`
+	Longitude        float64  `gorm:"not null;type:numeric(10,6);index:idx_packets_longitude"`
 	Altitude         float64  `gorm:"type:numeric(6,1)"`
 	AccuracyMeters   *float64 `gorm:"type:numeric(6,2)"`
 	Satellites       *int32
@@ -47,9 +47,9 @@ type Packet struct {
 
 type Device struct {
 	ID      uint
-	AppId   string `gorm:"UNIQUE_INDEX:app_device_eui"`
-	DevId   string `gorm:"UNIQUE_INDEX:app_device_eui"`
-	DevEui  string `gorm:"UNIQUE_INDEX:app_device_eui"`
+	AppId   string `gorm:"index:app_device_eui,unique"`
+	DevId   string `gorm:"index:app_device_eui,unique"`
+	DevEui  string `gorm:"index:app_device_eui,unique"`
 	Packets []Packet
 }
 
@@ -61,10 +61,10 @@ type Frequency struct {
 
 type DataRate struct {
 	ID              uint
-	Modulation      string `gorm:"UNIQUE_INDEX:data_rate"` // LORA or FSK or LORA-E
-	Bandwidth       uint64 `gorm:"UNIQUE_INDEX:data_rate"`
-	SpreadingFactor uint8  `gorm:"UNIQUE_INDEX:data_rate"`
-	Bitrate         uint64 `gorm:"UNIQUE_INDEX:data_rate"`
+	Modulation      string `gorm:"index:data_rate,unique"` // LORA or FSK or LORA-E
+	Bandwidth       uint64 `gorm:"index:data_rate,unique"`
+	SpreadingFactor uint8  `gorm:"index:data_rate,unique"`
+	Bitrate         uint64 `gorm:"index:data_rate,unique"`
 	Packets         []Packet
 }
 
@@ -105,9 +105,9 @@ type Antenna struct {
 	ID uint
 
 	// TTN gateway ID along with the Antenna index identifies a unique coverage area.
-	NetworkId    string `gorm:"type:text;UNIQUE_INDEX:idx_gtw_id_antenna"`
-	GatewayId    string `gorm:"type:text;UNIQUE_INDEX:idx_gtw_id_antenna"`
-	AntennaIndex uint8  `gorm:"UNIQUE_INDEX:idx_gtw_id_antenna"`
+	NetworkId    string `gorm:"type:text;index:idx_gtw_id_antenna,unique"`
+	GatewayId    string `gorm:"type:text;index:idx_gtw_id_antenna,unique"`
+	AntennaIndex uint8  `gorm:"index:idx_gtw_id_antenna,unique"`
 
 	// For now we do not set antenna locations, but add it here for future use
 	//Latitude         *float64
@@ -140,10 +140,10 @@ type Gateway struct {
 
 type GatewayLocation struct {
 	ID        uint
-	NetworkId string `gorm:"type:text;INDEX=idx_gtw_id_install"`
-	GatewayId string `gorm:"type:text;INDEX=idx_gtw_id_install"`
+	NetworkId string `gorm:"type:text;INDEX:idx_gtw_id_install"`
+	GatewayId string `gorm:"type:text;INDEX:idx_gtw_id_install"`
 
-	InstalledAt time.Time `gorm:"INDEX=idx_gtw_id_install"`
+	InstalledAt time.Time `gorm:"INDEX:idx_gtw_id_install"`
 	Latitude    float64
 	Longitude   float64
 }
