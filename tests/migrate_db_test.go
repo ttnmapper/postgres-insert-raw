@@ -1,8 +1,9 @@
 package tests
 
 import (
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"log"
 	"os"
 	"testing"
@@ -37,21 +38,12 @@ func TestMigrateDb(t *testing.T) {
 
 	log.Printf("[Configuration]\n%v\n", myConfiguration)
 
-	// Table name prefixes
-	gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTableName string) string {
-		//return "ttnmapper_" + defaultTableName
-		return defaultTableName
-	}
-
-	db, err := gorm.Open("postgres", "host="+myConfiguration.PostgresHost+" port="+myConfiguration.PostgresPort+" user="+myConfiguration.PostgresUser+" dbname="+myConfiguration.PostgresDatabase+" password="+myConfiguration.PostgresPassword+" sslmode=disable")
+	dsn := "host=" + myConfiguration.PostgresHost + " port=" + myConfiguration.PostgresPort + " user=" + myConfiguration.PostgresUser + " dbname=" + myConfiguration.PostgresDatabase + " password=" + myConfiguration.PostgresPassword + " sslmode=disable"
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 	if err != nil {
 		panic(err.Error())
-	}
-	defer db.Close()
-
-	if myConfiguration.PostgresDebugLog {
-		log.Println("Database debug logging enabled")
-		db.LogMode(true)
 	}
 
 	log.Println("Performing auto migrate")
@@ -67,7 +59,7 @@ func TestMigrateDb(t *testing.T) {
 		//&types.UserAgent{},
 		//&types.Antenna{},
 		//&types.FineTimestampKeyID{},
-	).Error; err != nil {
-		log.Println("Unable autoMigrateDB - " + err.Error())
+	); err != nil {
+		log.Println("Unable autoMigrateDB - ", err.Error())
 	}
 }

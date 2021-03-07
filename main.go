@@ -2,13 +2,14 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/streadway/amqp"
 	"github.com/tkanos/gonfig"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"log"
 	"net/http"
 	"sync"
@@ -99,22 +100,18 @@ func main() {
 		}
 	}()
 
-	// Table name prefixes
-	gorm.DefaultTableNameHandler = func(db *gorm.DB, defaultTableName string) string {
-		//return "ttnmapper_" + defaultTableName
-		return defaultTableName
-	}
-
-	// pq: unsupported sslmode "prefer"; only "require" (default), "verify-full", "verify-ca", and "disable" supported - so we disable it
-	db, err := gorm.Open("postgres", "host="+myConfiguration.PostgresHost+" port="+myConfiguration.PostgresPort+" user="+myConfiguration.PostgresUser+" dbname="+myConfiguration.PostgresDatabase+" password="+myConfiguration.PostgresPassword+" sslmode=disable")
-	if err != nil {
-		panic(err.Error())
-	}
-	defer db.Close()
-
+	var gormLogLevel = logger.Silent
 	if myConfiguration.PostgresDebugLog {
 		log.Println("Database debug logging enabled")
-		db.LogMode(true)
+		gormLogLevel = logger.Info
+	}
+
+	dsn := "host=" + myConfiguration.PostgresHost + " port=" + myConfiguration.PostgresPort + " user=" + myConfiguration.PostgresUser + " dbname=" + myConfiguration.PostgresDatabase + " password=" + myConfiguration.PostgresPassword + " sslmode=disable"
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(gormLogLevel),
+	})
+	if err != nil {
+		panic(err.Error())
 	}
 
 	// Create tables if they do not exist
@@ -131,7 +128,7 @@ func main() {
 		&types.UserAgent{},
 		&types.Antenna{},
 		&types.FineTimestampKeyID{},
-	).Error; err != nil {
+	); err != nil {
 		log.Println("Unable autoMigrateDB - " + err.Error())
 	}
 

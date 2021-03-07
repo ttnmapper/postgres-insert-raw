@@ -6,9 +6,9 @@ import (
 
 type Packet struct {
 	ID   uint
-	Time time.Time `gorm:"not null;index:idx_packets_time"`
+	Time time.Time `gorm:"not null;index:idx_packets_antenna_id_time,priority:2;index:idx_packets_device_id_time,priority:2"` // index priority 11 is lower than default 10. Device and gateway is less unique, so will filter better first step.
 
-	DeviceID uint `gorm:"not null;index:idx_packets_device_id"`
+	DeviceID uint `gorm:"not null;index:idx_packets_device_id_time,priority:1"`
 
 	FPort uint8
 	FCnt  uint32
@@ -18,7 +18,7 @@ type Packet struct {
 	CodingRateID uint
 
 	// Gateway data
-	AntennaID              uint `gorm:"not null;index:idx_packets_antenna_id"`
+	AntennaID              uint `gorm:"not null;index:idx_packets_antenna_id_time,priority:1;index:idx_packets_antenna_id_latitude,priority:1;index:idx_packets_antenna_id_longitude,priority:1"`
 	GatewayTime            *time.Time
 	Timestamp              *uint32
 	FineTimestamp          *uint64
@@ -29,8 +29,8 @@ type Packet struct {
 	SignalRssi             *float32 `gorm:"type:numeric(6,2)"`
 	Snr                    float32  `gorm:"type:numeric(5,2)"`
 
-	Latitude         float64  `gorm:"not null;type:numeric(10,6);index:idx_packets_latitude"`
-	Longitude        float64  `gorm:"not null;type:numeric(10,6);index:idx_packets_longitude"`
+	Latitude         float64  `gorm:"not null;type:numeric(10,6);index:idx_packets_antenna_id_latitude,priority:2"`
+	Longitude        float64  `gorm:"not null;type:numeric(10,6);index:idx_packets_antenna_id_longitude,priority:2"`
 	Altitude         float64  `gorm:"type:numeric(6,1)"`
 	AccuracyMeters   *float64 `gorm:"type:numeric(6,2)"`
 	Satellites       *int32
