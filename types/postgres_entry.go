@@ -134,8 +134,8 @@ type Gateway struct {
 	//AtLocationSince	time.Time // This value gets updated when the gateway moves
 	LastHeard time.Time // This value always gets updated to reflect that the gateway is working
 
-	Antennas         []Antenna
-	GatewayLocations []GatewayLocation
+	//Antennas         []Antenna
+	//GatewayLocations []GatewayLocation
 }
 
 type GatewayLocation struct {

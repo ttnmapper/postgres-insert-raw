@@ -49,16 +49,16 @@ func TestMigrateDb(t *testing.T) {
 	log.Println("Performing auto migrate")
 	if err := db.AutoMigrate(
 		&types.Packet{},
-		//&types.Device{},
-		//&types.Frequency{},
-		//&types.DataRate{},
-		//&types.CodingRate{},
-		//&types.AccuracySource{},
-		//&types.Experiment{},
-		//&types.User{},
-		//&types.UserAgent{},
-		//&types.Antenna{},
-		//&types.FineTimestampKeyID{},
+		&types.Device{},
+		&types.Frequency{},
+		&types.DataRate{},
+		&types.CodingRate{},
+		&types.AccuracySource{},
+		&types.Experiment{},
+		&types.User{},
+		&types.UserAgent{},
+		&types.Antenna{},
+		&types.FineTimestampKeyID{},
 	); err != nil {
 		log.Println("Unable autoMigrateDB - ", err.Error())
 	}
