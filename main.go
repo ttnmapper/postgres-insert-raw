@@ -138,8 +138,8 @@ func main() {
 		go insertToPostgres(i+1, db)
 	}
 
-	// Start thread that published inserted messages to amqp
-	publishToAmqpNewInsertedData()
+	// Start thread that publishes inserted messages to amqp
+	go publishToAmqpNewInsertedData()
 
 	// Start amqp listener on this thread - blocking function
 	log.Println("Starting AMQP thread")
@@ -203,16 +203,13 @@ func subscribeToRabbit() {
 	failOnError(err, "Failed to register a consumer")
 
 	// Start thread that listens for new amqp messages
-	go func() {
-		for d := range msgs {
-			log.Print(" [a] Packet received")
-			messageChannel <- d
-		}
-	}()
+	for d := range msgs {
+		log.Print(" [a] Packet received")
+		messageChannel <- d
+	}
 
-	log.Printf("Init Complete")
-	forever := make(chan bool)
-	<-forever
+	log.Fatal("Subscribe channel closed")
+
 }
 
 func insertToPostgres(thread int, db *gorm.DB) {
@@ -220,7 +217,7 @@ func insertToPostgres(thread int, db *gorm.DB) {
 	for d := range messageChannel {
 		log.Printf("[%d][p] Processing packet", thread)
 
-		// The message form amqp is a json string. Unmarshal to ttnmapper uplink struct
+		// The message from amqp is a json string. Unmarshal to ttnmapper uplink struct
 		var message types.TtnMapperUplinkMessage
 		if err := json.Unmarshal(d.Body, &message); err != nil {
 			log.Printf("[%d][p] "+err.Error(), thread)
@@ -260,14 +257,12 @@ func insertToPostgres(thread int, db *gorm.DB) {
 		insertedChannel <- message
 
 	}
+
+	log.Fatal("Messages channel closed")
 }
 
 func messageToEntry(db *gorm.DB, message types.TtnMapperUplinkMessage, gateway types.TtnMapperGateway) (types.Packet, error) {
 	var entry = types.Packet{}
-
-	// Packet broker metadata will provide network id. For now assume TTN
-	gateway.NetworkId = message.NetworkType + "://" + message.NetworkAddress
-	log.Println("Network ID =", gateway.NetworkId)
 
 	// Time
 	seconds := message.Time / 1000000000
@@ -485,46 +480,46 @@ func messageToEntry(db *gorm.DB, message types.TtnMapperUplinkMessage, gateway t
 }
 
 func publishToAmqpNewInsertedData() {
-	go func() {
-		newDataAmqpConn, err := amqp.Dial("amqp://" + myConfiguration.AmqpUser + ":" + myConfiguration.AmqpPassword + "@" + myConfiguration.AmqpHost + ":" + myConfiguration.AmqpPort + "/")
-		failOnError(err, "Failed to connect to RabbitMQ")
-		defer newDataAmqpConn.Close()
+	newDataAmqpConn, err := amqp.Dial("amqp://" + myConfiguration.AmqpUser + ":" + myConfiguration.AmqpPassword + "@" + myConfiguration.AmqpHost + ":" + myConfiguration.AmqpPort + "/")
+	failOnError(err, "Failed to connect to RabbitMQ")
+	defer newDataAmqpConn.Close()
 
-		newDataAmqpChannel, err := newDataAmqpConn.Channel()
-		failOnError(err, "Failed to open a channel")
-		defer newDataAmqpChannel.Close()
+	newDataAmqpChannel, err := newDataAmqpConn.Channel()
+	failOnError(err, "Failed to open a channel")
+	defer newDataAmqpChannel.Close()
 
-		err = newDataAmqpChannel.ExchangeDeclare(
-			myConfiguration.AmqpExchangeInsertedData, // name
-			"fanout",                                 // type
-			true,                                     // durable
-			false,                                    // auto-deleted
-			false,                                    // internal
-			false,                                    // no-wait
-			nil,                                      // arguments
-		)
-		failOnError(err, "Failed to declare an exchange")
+	err = newDataAmqpChannel.ExchangeDeclare(
+		myConfiguration.AmqpExchangeInsertedData, // name
+		"fanout",                                 // type
+		true,                                     // durable
+		false,                                    // auto-deleted
+		false,                                    // internal
+		false,                                    // no-wait
+		nil,                                      // arguments
+	)
+	failOnError(err, "Failed to declare an exchange")
 
-		for message := range insertedChannel {
+	for message := range insertedChannel {
 
-			messageJsonData, err := json.Marshal(message)
-			if err != nil {
-				log.Println("\t\tCan't marshal message to json")
-				return
-			}
-
-			err = newDataAmqpChannel.Publish(
-				myConfiguration.AmqpExchangeInsertedData, // exchange
-				"",                                       // routing key
-				false,                                    // mandatory
-				false,                                    // immediate
-				amqp.Publishing{
-					ContentType: "text/plain",
-					Body:        messageJsonData,
-				})
-			failOnError(err, "Failed to publish a message")
-
-			log.Printf("[I] Published inserted to AMQP exchange")
+		messageJsonData, err := json.Marshal(message)
+		if err != nil {
+			log.Println("\t\tCan't marshal message to json")
+			return
 		}
-	}()
+
+		err = newDataAmqpChannel.Publish(
+			myConfiguration.AmqpExchangeInsertedData, // exchange
+			"",                                       // routing key
+			false,                                    // mandatory
+			false,                                    // immediate
+			amqp.Publishing{
+				ContentType: "text/plain",
+				Body:        messageJsonData,
+			})
+		failOnError(err, "Failed to publish a message")
+
+		log.Printf("[I] Published inserted to AMQP exchange")
+	}
+
+	log.Fatal("Publish channel closed")
 }
