@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 	"testing"
-	"ttnmapper-postgres-insert-raw/types"
+	"ttnmapper-postgres-insert-raw/pkg/types"
 )
 
 type Configuration struct {

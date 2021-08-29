@@ -96,3 +96,18 @@ type TtnMapperGateway struct {
 	// Some sources of statuses provide the description
 	Description string `json:"description,omitempty"`
 }
+
+type TtnMapperGatewayMoved struct {
+	NetworkId string `json:"network_id,omitempty"`
+	GatewayId string `json:"gtw_id"`
+
+	Time int64 `json:"time,omitempty"`
+
+	LatitudeOld  float64 `json:"latitude_old,omitempty"`
+	LongitudeOld float64 `json:"longitude_old,omitempty"`
+	AltitudeOld  int32   `json:"altitude_old,omitempty"`
+
+	LatitudeNew  float64 `json:"latitude_new,omitempty"`
+	LongitudeNew float64 `json:"longitude_new,omitempty"`
+	AltitudeNew  int32   `json:"altitude_new,omitempty"`
+}

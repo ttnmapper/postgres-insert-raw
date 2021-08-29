@@ -47,11 +47,12 @@ type Packet struct {
 }
 
 type Device struct {
-	ID      uint
-	AppId   string `gorm:"index:app_device_eui,unique"`
-	DevId   string `gorm:"index:app_device_eui,unique"`
-	DevEui  string `gorm:"index:app_device_eui,unique"`
-	Packets []Packet
+	ID        uint
+	NetworkId string `gorm:"index:net_app_dev_eui,unique"`
+	AppId     string `gorm:"index:net_app_dev_eui,unique"`
+	DevId     string `gorm:"index:net_app_dev_eui,unique"`
+	DevEui    string `gorm:"index:net_app_dev_eui,unique"`
+	Packets   []Packet
 }
 
 type Frequency struct {
@@ -166,9 +167,10 @@ type FineTimestampKeyID struct {
 
 // Indexers: These structs are the same as the ones above, but used to index the cache maps
 type DeviceIndexer struct {
-	DevId  string
-	AppId  string
-	DevEui string
+	NetworkId string
+	DevId     string
+	AppId     string
+	DevEui    string
 }
 
 type GatewayIndexer struct {
