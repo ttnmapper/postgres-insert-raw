@@ -1,14 +1,13 @@
 package database
 
 import (
+	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"log"
+	"strings"
 	"sync"
-	"time"
-	"ttnmapper-postgres-insert-raw/pkg/types"
-	"ttnmapper-postgres-insert-raw/pkg/utils"
 )
 
 var (
@@ -53,241 +52,122 @@ func (databaseContext *DatabaseContext) Init() {
 	// Create tables if they do not exist
 	//log.Println("Performing auto migrate")
 	//if err := db.AutoMigrate(
-	//	&types.Packet{},
-	//	&types.Device{},
-	//	&types.Frequency{},
-	//	&types.DataRate{},
-	//	&types.CodingRate{},
-	//	&types.AccuracySource{},
-	//	&types.Experiment{},
-	//	&types.User{},
-	//	&types.UserAgent{},
-	//	&types.Antenna{},
-	//	&types.FineTimestampKeyID{},
+	//	&Device{},
+	//	&Frequency{},
+	//	&DataRate{},
+	//	&CodingRate{},
+	//	&AccuracySource{},
+	//	&Experiment{},
+	//	&User{},
+	//	&UserAgent{},
+	//	&Antenna{},
+	//	&FineTimestampKeyID{},
+	//	&Packet{},
 	//); err != nil {
 	//	log.Println("Unable autoMigrateDB - " + err.Error())
 	//}
 }
 
-func InsertEntry(entry *types.Packet) error {
+func InsertEntry(entry *Packet) error {
 	err := db.Create(&entry).Error
 	return err
 }
 
-func UplinkMessageToPacket(message types.TtnMapperUplinkMessage, gateway types.TtnMapperGateway) (types.Packet, error) {
-	var entry = types.Packet{}
-
-	// Time
-	seconds := message.Time / 1000000000
-	nanos := message.Time % 1000000000
-	entry.Time = time.Unix(seconds, nanos)
-
-	// DeviceID
-	deviceIndexer := types.DeviceIndexer{NetworkId: message.NetworkId, AppId: message.AppID, DevId: message.DevID, DevEui: message.DevEui}
-	i, ok := deviceDbCache.Load(deviceIndexer)
-	if ok {
-		entry.DeviceID = i.(uint)
-	} else {
-		log.Println("Get or create device from/in DB:", deviceIndexer)
-		deviceDb := types.Device{NetworkId: message.NetworkId, AppId: message.AppID, DevId: message.DevID, DevEui: message.DevEui}
-		err := db.FirstOrCreate(&deviceDb, &deviceDb).Error
-		if err != nil {
-			return entry, err
-		}
-		entry.DeviceID = deviceDb.ID
-		deviceDbCache.Store(deviceIndexer, deviceDb.ID)
+func InsertGatewayLocationsBatch(gatewayLocations []GatewayLocation) error {
+	tx := db.Begin()
+	valueStrings := []string{}
+	valueArgs := []interface{}{}
+	for _, location := range gatewayLocations {
+		valueStrings = append(valueStrings, "(?, ?, ?, ?, ?, ?)")
+		valueArgs = append(valueArgs, location.NetworkId)
+		valueArgs = append(valueArgs, location.GatewayId)
+		valueArgs = append(valueArgs, location.InstalledAt)
+		valueArgs = append(valueArgs, location.Latitude)
+		valueArgs = append(valueArgs, location.Longitude)
+		valueArgs = append(valueArgs, location.Altitude)
 	}
 
-	// FPort, FCnt
-	entry.FPort = message.FPort
-	entry.FCnt = uint32(message.FCnt)
+	stmt := fmt.Sprintf("INSERT INTO gateway_locations (network_id, gateway_id, installed_at, latitude, longitude, altitude) VALUES %s", strings.Join(valueStrings, ","))
+	err := tx.Exec(stmt, valueArgs...).Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	err = tx.Commit().Error
+	//tx.Rollback()
+	return err
+}
 
-	// FrequencyID
-	i, ok = frequencyDbCache.Load(message.Frequency)
-	if ok {
-		entry.FrequencyID = i.(uint)
-	} else {
-		frequencyDb := types.Frequency{Herz: message.Frequency}
-		err := db.FirstOrCreate(&frequencyDb, &frequencyDb).Error
-		if err != nil {
-			return entry, err
-		}
-		entry.FrequencyID = frequencyDb.ID
-		frequencyDbCache.Store(message.Frequency, frequencyDb.ID)
+func InsertPacketsBatch(packets []Packet) error {
+	tx := db.Begin()
+	valueStrings := []string{}
+	valueArgs := []interface{}{}
+	fieldNames := "time, device_id, f_port, f_cnt, frequency_id, data_rate_id, coding_rate_id, " +
+		"antenna_id, gateway_time, timestamp, " +
+		"fine_timestamp, fine_timestamp_encrypted, fine_timestamp_key_id, " +
+		"channel_index, rssi, signal_rssi, snr, " +
+		"latitude, longitude, altitude, accuracy_meters, satellites, hdop, accuracy_source_id, " +
+		"experiment_id, user_id, user_agent_id, deleted_at"
+
+	// ('2016-01-31 15:50:01', 185203, 0, 0, 123, 1, 1, 32699, NULL, NULL, NULL, NULL, NULL, 0, -109.000000, NULL, 2.500000, 52.244205, 6.856759, 0.000000, NULL, NULL, NULL, 1, NULL, 1, 1, NULL),
+	// ('2016-01-31 15:50:01', 185203, 0, 0, 123, 1, 1, 160, NULL, NULL, NULL, NULL, NULL, 0, -119.000000, NULL, -4.800000, 52.244205, 6.856759, 0.000000, NULL, NULL, NULL, 1, NULL, 1, 1, NULL),
+	// ('2016-01-31 15:49:56', 185203, 0, 0, 1, 1, 1, 32699, NULL, NULL, NULL, NULL, NULL, 0, -107.000000, NULL, 7.000000, 52.243984, 6.856919, 0.000000, NULL, NULL, NULL, 1, NULL, 1, 1, NULL),
+	// ('2016-01-31 15:49:56', 185203, 0, 0, 1, 1, 1, 160, NULL, NULL, NULL, NULL, NULL, 0, -113.000000, NULL, 0.500000, 52.243984, 6.856919, 0.000000, NULL, NULL, NULL, 1, NULL, 1, 1, NULL)
+	for _, packet := range packets {
+		valueStrings = append(valueStrings, "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+		valueArgs = append(valueArgs, packet.Time)
+		valueArgs = append(valueArgs, packet.DeviceID)
+		valueArgs = append(valueArgs, packet.FPort)
+		valueArgs = append(valueArgs, packet.FCnt)
+		valueArgs = append(valueArgs, packet.FrequencyID)
+		valueArgs = append(valueArgs, packet.DataRateID)
+		valueArgs = append(valueArgs, packet.CodingRateID)
+		valueArgs = append(valueArgs, packet.AntennaID)
+		valueArgs = append(valueArgs, packet.GatewayTime)
+		valueArgs = append(valueArgs, packet.Timestamp)
+		valueArgs = append(valueArgs, packet.FineTimestamp)
+		valueArgs = append(valueArgs, packet.FineTimestampEncrypted)
+		valueArgs = append(valueArgs, packet.FineTimestampKeyID)
+		valueArgs = append(valueArgs, packet.ChannelIndex)
+		valueArgs = append(valueArgs, packet.Rssi)
+		valueArgs = append(valueArgs, packet.SignalRssi)
+		valueArgs = append(valueArgs, packet.Snr)
+		valueArgs = append(valueArgs, packet.Latitude)
+		valueArgs = append(valueArgs, packet.Longitude)
+		valueArgs = append(valueArgs, packet.Altitude)
+		valueArgs = append(valueArgs, packet.AccuracyMeters)
+		valueArgs = append(valueArgs, packet.Satellites)
+		valueArgs = append(valueArgs, packet.Hdop)
+		valueArgs = append(valueArgs, packet.AccuracySourceID)
+		valueArgs = append(valueArgs, packet.ExperimentID)
+		valueArgs = append(valueArgs, packet.UserID)
+		valueArgs = append(valueArgs, packet.UserAgentID)
+		valueArgs = append(valueArgs, packet.DeletedAt)
 	}
 
-	// DataRateID
-	dataRateIndexer := types.DataRateIndexer{
-		Modulation:      message.Modulation,
-		Bandwidth:       message.Bandwidth,
-		SpreadingFactor: message.SpreadingFactor,
-		Bitrate:         message.Bitrate}
-	i, ok = dataRateDbCache.Load(dataRateIndexer)
-	if ok {
-		entry.DataRateID = i.(uint)
-	} else {
-		dataRateDb := types.DataRate{
-			Modulation:      message.Modulation,
-			Bandwidth:       message.Bandwidth,
-			SpreadingFactor: message.SpreadingFactor,
-			Bitrate:         message.Bitrate}
-		err := db.FirstOrCreate(&dataRateDb, &dataRateDb).Error
-		if err != nil {
-			return entry, err
-		}
-		entry.DataRateID = dataRateDb.ID
-		dataRateDbCache.Store(dataRateIndexer, dataRateDb.ID)
+	stmt := fmt.Sprintf("INSERT INTO packets (%s) VALUES %s", fieldNames, strings.Join(valueStrings, ","))
+	err := tx.Exec(stmt, valueArgs...).Error
+	if err != nil {
+		tx.Rollback()
+		return err
 	}
+	err = tx.Commit().Error
+	//tx.Rollback()
+	return err
+}
 
-	// CodingRateID
-	i, ok = codingRateDbCache.Load(message.CodingRate)
-	if ok {
-		entry.CodingRateID = i.(uint)
-	} else {
-		codingRateDb := types.CodingRate{Name: message.CodingRate}
-		err := db.FirstOrCreate(&codingRateDb, &codingRateDb).Error
-		if err != nil {
-			return entry, err
-		}
-		entry.CodingRateID = codingRateDb.ID
-		codingRateDbCache.Store(message.CodingRate, codingRateDb.ID)
-	}
+func GetAllTtnV2Antennas() []Antenna {
+	var antennas []Antenna
+	db.Where("network_id LIKE 'NS_TTN_V2://%'").Find(&antennas)
+	return antennas
+}
 
-	// AntennaID - packets are stored with a pointer to the antenna that received it. A network has multiple gateways, a gateway has multiple antennas.
-	// We therefore store coverage data per antenna, assuming antenna index 0 when we don't know the antenna index.
-	antennaIndexer := types.AntennaIndexer{NetworkId: gateway.NetworkId, GatewayId: gateway.GatewayId, AntennaIndex: gateway.AntennaIndex}
-	i, ok = antennaDbCache.Load(antennaIndexer)
-	if ok {
-		entry.AntennaID = i.(uint)
-	} else {
-		antennaDb := types.Antenna{NetworkId: gateway.NetworkId, GatewayId: gateway.GatewayId, AntennaIndex: gateway.AntennaIndex}
-		err := db.FirstOrCreate(&antennaDb, &antennaDb).Error
-		if err != nil {
-			return entry, err
-		}
-		entry.AntennaID = antennaDb.ID
-		antennaDbCache.Store(antennaIndexer, antennaDb.ID)
-	}
+func FindAntenna(networkId string, gatewayId string, antennaIndex uint8) Antenna {
+	antenna := Antenna{NetworkId: networkId, GatewayId: gatewayId, AntennaIndex: antennaIndex}
+	db.FirstOrCreate(&antenna, &antenna)
+	return antenna
+}
 
-	// GatewayTime
-	if gateway.Time != 0 {
-		seconds = gateway.Time / 1000000000
-		nanos = gateway.Time % 1000000000
-		gatewayTime := time.Unix(seconds, nanos)
-		entry.GatewayTime = &gatewayTime
-	}
-
-	// Timestamp
-	if gateway.Timestamp != 0 {
-		entry.Timestamp = &gateway.Timestamp
-	}
-
-	// FineTimestamp
-	if gateway.FineTimestamp != 0 {
-		entry.FineTimestamp = &gateway.FineTimestamp
-	}
-
-	// FineTimestampEncrypted
-	if len(gateway.FineTimestampEncrypted) > 0 {
-		entry.FineTimestampEncrypted = &gateway.FineTimestampEncrypted
-	}
-
-	// FineTimestampKeyID
-	if gateway.FineTimestampEncryptedKeyId != "" {
-		// TODO: cache if this is done often
-		fineTimestampKeyId := types.FineTimestampKeyID{FineTimestampEncryptedKeyId: gateway.FineTimestampEncryptedKeyId}
-		err := db.FirstOrCreate(&fineTimestampKeyId, &fineTimestampKeyId).Error
-		if err != nil {
-			return entry, err
-		}
-		entry.FineTimestampKeyID = &fineTimestampKeyId.ID
-	}
-
-	// ChannelIndex
-	entry.ChannelIndex = gateway.ChannelIndex
-
-	// Rssi, SignalRssi, Snr
-	entry.Rssi = gateway.Rssi
-	if gateway.SignalRssi != 0 {
-		entry.SignalRssi = &gateway.SignalRssi
-	}
-	entry.Snr = gateway.Snr
-
-	// Latitude, Longitude, Altitude, AccuracyMeters, Satellites, Hdop
-	entry.Latitude = utils.CapFloatTo(message.Latitude, 10, 6)
-	entry.Longitude = utils.CapFloatTo(message.Longitude, 10, 6)
-	entry.Altitude = utils.CapFloatTo(message.Altitude, 6, 1)
-
-	if message.AccuracyMeters != 0 {
-		accuracy := utils.CapFloatTo(message.AccuracyMeters, 6, 2)
-		entry.AccuracyMeters = &accuracy
-	}
-	if message.Satellites != 0 {
-		entry.Satellites = &message.Satellites
-	}
-	if message.Hdop != 0 {
-		hdop := utils.CapFloatTo(message.Hdop, 3, 1)
-		entry.Hdop = &hdop
-	}
-
-	// AccuracySourceID
-	i, ok = accuracySourceDbCache.Load(message.AccuracySource)
-	if ok {
-		entry.AccuracySourceID = i.(uint)
-	} else {
-		accuracySourceDb := types.AccuracySource{Name: message.AccuracySource}
-		err := db.FirstOrCreate(&accuracySourceDb, &accuracySourceDb).Error
-		if err != nil {
-			return entry, err
-		}
-		entry.AccuracySourceID = accuracySourceDb.ID
-		accuracySourceDbCache.Store(message.AccuracySource, accuracySourceDb.ID)
-	}
-
-	// ExperimentID
-	if message.Experiment != "" {
-		i, ok = experimentNameDbCache.Load(message.Experiment)
-		if ok {
-			experimentId := i.(uint)
-			entry.ExperimentID = &experimentId
-		} else {
-			experimentNameDb := types.Experiment{Name: message.Experiment}
-			err := db.FirstOrCreate(&experimentNameDb, &experimentNameDb).Error
-			if err != nil {
-				return entry, err
-			}
-			entry.ExperimentID = &experimentNameDb.ID
-			experimentNameDbCache.Store(message.Experiment, experimentNameDb.ID)
-		}
-	}
-
-	// UserID
-	i, ok = userIdDbCache.Load(message.UserId)
-	if ok {
-		entry.UserID = i.(uint)
-	} else {
-		userIdDb := types.User{Identifier: message.UserId}
-		err := db.FirstOrCreate(&userIdDb, &userIdDb).Error
-		if err != nil {
-			return entry, err
-		}
-		entry.UserID = userIdDb.ID
-		userIdDbCache.Store(message.UserId, userIdDb.ID)
-	}
-
-	// UserAgentID
-	i, ok = userAgentDbCache.Load(message.UserAgent)
-	if ok {
-		entry.UserAgentID = i.(uint)
-	} else {
-		userAgentDb := types.UserAgent{Name: message.UserAgent}
-		err := db.FirstOrCreate(&userAgentDb, &userAgentDb).Error
-		if err != nil {
-			return entry, err
-		}
-		entry.UserAgentID = userAgentDb.ID
-		userAgentDbCache.Store(message.UserAgent, userAgentDb.ID)
-	}
-
-	return entry, nil
+func UpdatePacketsAntennaId(oldAntennaId uint, newAntennaId uint) {
+	db.Model(&Packet{}).Where("antenna_id = ?", oldAntennaId).Update("antenna_id", newAntennaId)
 }

@@ -1,4 +1,4 @@
-package types
+package database
 
 import (
 	"time"
@@ -127,9 +127,9 @@ type Gateway struct {
 	GatewayEui  *string
 	Description *string
 
-	Latitude         *float64
-	Longitude        *float64
-	Altitude         *int32
+	Latitude         float64
+	Longitude        float64
+	Altitude         int32
 	LocationAccuracy *int32
 	LocationSource   *string
 
@@ -148,16 +148,18 @@ type GatewayLocation struct {
 	InstalledAt time.Time `gorm:"INDEX:idx_gtw_id_install"`
 	Latitude    float64
 	Longitude   float64
+	Altitude    int32
 }
 
 // To blacklist a gateway set its location to 0,0
 type GatewayLocationForce struct {
 	ID        uint
-	NetworkId string `gorm:"type:text;UNIQUE_INDEX:idx_gtw_id"`
-	GatewayId string `gorm:"type:text;UNIQUE_INDEX:idx_gtw_id"`
+	NetworkId string `gorm:"type:text;UNIQUE_INDEX:idx_gtw_id_force"`
+	GatewayId string `gorm:"type:text;UNIQUE_INDEX:idx_gtw_id_force"`
 
 	Latitude  float64
 	Longitude float64
+	Altitude  int32
 }
 
 type FineTimestampKeyID struct {
