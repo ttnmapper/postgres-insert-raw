@@ -10,11 +10,11 @@ type TtnMapperUplinkMessage struct {
 	/*
 		One of the constant network type strings from the above const()
 	*/
-	NetworkType string `json:"network_type,omitempty"`
+	//NetworkType string `json:"network_type,omitempty"`
 	/*
 		A hostname or IP address to uniquely identify the network server
 	*/
-	NetworkAddress string `json:"network_address,omitempty"`
+	//NetworkAddress string `json:"network_address,omitempty"`
 
 	// Combine network type and network address into a single networkid field which is globally unique.
 	// We will start using a combination of the LoRaWAN NetID and a TenantID soon.

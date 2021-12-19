@@ -51,7 +51,7 @@ func main() {
 	}
 
 	log.Println("Init Postgres database")
-	databaseContext := database.DatabaseContext{
+	databaseContext := database.Context{
 		Host:     myConfiguration.PostgresHost,
 		Port:     myConfiguration.PostgresPort,
 		User:     myConfiguration.PostgresUser,
@@ -61,7 +61,7 @@ func main() {
 	}
 	databaseContext.Init()
 
-	antennas := database.GetAllTtnV2Antennas()
+	antennas := database.GetAllOldNamingTtnV2Antennas()
 
 	for i, oldAntenna := range antennas {
 		newAntenna := database.FindAntenna("thethingsnetwork.org", oldAntenna.GatewayId, oldAntenna.AntennaIndex)

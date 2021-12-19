@@ -64,7 +64,7 @@ func main() {
 	mysqlContext.Init()
 
 	log.Println("Init Postgres database")
-	databaseContext := database.DatabaseContext{
+	databaseContext := database.Context{
 		Host:     myConfiguration.PostgresHost,
 		Port:     myConfiguration.PostgresPort,
 		User:     myConfiguration.PostgresUser,
@@ -79,9 +79,19 @@ func main() {
 
 	// Get all gateway moves from mysql
 	var mysqlPackets []oldstack.Packet
-	var offset uint = 0 //1409906
+	//var offset uint = 175972727 //
+	// 2021/09/18 05:06:21 Inserted 175971727
+	// 2021/09/18 05:06:21 175971803 already in postgres
+	// 2021/09/18 05:06:21 175972727 already in postgres
+	// 2021/09/18 05:06:21 ERROR: syntax error at end of input (SQLSTATE 42601)
+	// 20000858 // 2021-09-17 16:00 SAST interrupt for hdd resize  0 //1409906
+
+	// Experiments
+	var offset uint = 0
+
 	for {
-		mysqlPackets = oldstack.GetPackets(500, offset)
+		//mysqlPackets = oldstack.GetPackets(500, offset)
+		mysqlPackets = oldstack.GetExperimentPackets(500, offset)
 		if len(mysqlPackets) == 0 {
 			break
 		}
@@ -91,7 +101,7 @@ func main() {
 			offset = mPacket.ID
 
 			if mPacket.Time.After(stopDateTime) {
-				log.Println(offset, "already in postgres")
+				//log.Println(offset, "already in postgres")
 				continue
 			}
 
@@ -99,7 +109,7 @@ func main() {
 			//log.Println(offset)
 			//log.Println(utils.PrettyPrint(mPacket))
 			//log.Println(utils.PrettyPrint(message))
-			log.Println(offset, message.UserId)
+			//log.Println(offset, message.UserId)
 			//fmt.Printf("%d: %s, ", offset, message.UserId)
 			uplinkMessages = append(uplinkMessages, message)
 		}
@@ -119,10 +129,9 @@ func main() {
 
 		err := database.InsertPacketsBatch(entriesToInsert)
 		if err != nil {
-			log.Fatalf(err.Error())
+			log.Println(err.Error())
 		}
 		log.Println("Inserted", offset)
-		break
 	}
 
 }

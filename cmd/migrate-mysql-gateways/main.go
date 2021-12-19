@@ -68,7 +68,7 @@ func main() {
 	mysqlContext.Init()
 
 	log.Println("Init Postgres database")
-	databaseContext := database.DatabaseContext{
+	databaseContext := database.Context{
 		Host:     myConfiguration.PostgresHost,
 		Port:     myConfiguration.PostgresPort,
 		User:     myConfiguration.PostgresUser,

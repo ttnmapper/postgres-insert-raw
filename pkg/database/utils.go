@@ -1,11 +1,15 @@
 package database
 
 import (
-	"log"
+	"database/sql"
 	"time"
 	"ttnmapper-postgres-insert-raw/pkg/types"
 	"ttnmapper-postgres-insert-raw/pkg/utils"
 )
+
+/*
+Run started 2021-09-17 11:45 UTC
+*/
 
 func UplinkMessageToPacket(message types.TtnMapperUplinkMessage, gateway types.TtnMapperGateway) (Packet, error) {
 	var entry = Packet{}
@@ -21,7 +25,7 @@ func UplinkMessageToPacket(message types.TtnMapperUplinkMessage, gateway types.T
 	if ok {
 		entry.DeviceID = i.(uint)
 	} else {
-		log.Println("Get or create device from/in DB:", deviceIndexer)
+		//log.Println("Get or create device from/in DB:", deviceIndexer)
 		deviceDb := Device{NetworkId: message.NetworkId, AppId: message.AppID, DevId: message.DevID, DevEui: message.DevEui}
 		err := db.FirstOrCreate(&deviceDb, &deviceDb).Error
 		if err != nil {
@@ -223,4 +227,8 @@ func UplinkMessageToPacket(message types.TtnMapperUplinkMessage, gateway types.T
 	}
 
 	return entry, nil
+}
+
+func ScanRows(row *sql.Rows, result interface{}) error {
+	return db.ScanRows(row, result)
 }

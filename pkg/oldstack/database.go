@@ -53,9 +53,9 @@ func GetPackets(limit int, offset uint) []Packet {
 	return packets
 }
 
-func GetExperimentPackets(limit int, offset int) []Packet {
+func GetExperimentPackets(limit int, offset uint) []Packet {
 	var packets []Packet
-	db.Table("experiments").Limit(limit).Offset(offset).Find(&packets)
+	db.Table("experiments").Limit(limit).Where("id > ?", offset).Find(&packets)
 	return packets
 }
 

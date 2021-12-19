@@ -1,18 +1,25 @@
 package database
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
 	"log"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 )
 
 var (
 	deviceDbCache         sync.Map
 	antennaDbCache        sync.Map
+	gatewayDbCache        sync.Map
 	dataRateDbCache       sync.Map
 	codingRateDbCache     sync.Map
 	frequencyDbCache      sync.Map
@@ -23,7 +30,7 @@ var (
 	db                    *gorm.DB
 )
 
-type DatabaseContext struct {
+type Context struct {
 	Host     string
 	Port     string
 	User     string
@@ -32,7 +39,7 @@ type DatabaseContext struct {
 	DebugLog bool
 }
 
-func (databaseContext *DatabaseContext) Init() {
+func (databaseContext *Context) Init() {
 
 	var gormLogLevel = logger.Silent
 	if databaseContext.DebugLog {
@@ -40,7 +47,16 @@ func (databaseContext *DatabaseContext) Init() {
 		gormLogLevel = logger.Info
 	}
 
-	dsn := "host=" + databaseContext.Host + " port=" + databaseContext.Port + " user=" + databaseContext.User + " dbname=" + databaseContext.Database + " password=" + databaseContext.Password + " sslmode=disable"
+	// Postgres has a max length for application name of 63 chars. If we do not limit this we get a "received unexpected message" error
+	applicationName := filepath.Base(os.Args[0])
+	if len(applicationName) > 63 {
+		applicationName = applicationName[:63]
+	}
+
+	dsn := "host=" + databaseContext.Host + " port=" + databaseContext.Port + " user=" + databaseContext.User +
+		" dbname=" + databaseContext.Database + " password=" + databaseContext.Password + " sslmode=disable" +
+		" application_name=" + applicationName
+	log.Println(dsn)
 	var err error
 	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(gormLogLevel),
@@ -48,24 +64,27 @@ func (databaseContext *DatabaseContext) Init() {
 	if err != nil {
 		panic(err.Error())
 	}
+}
 
+func AutoMigrate(models ...interface{}) {
 	// Create tables if they do not exist
-	//log.Println("Performing auto migrate")
-	//if err := db.AutoMigrate(
-	//	&Device{},
-	//	&Frequency{},
-	//	&DataRate{},
-	//	&CodingRate{},
-	//	&AccuracySource{},
-	//	&Experiment{},
-	//	&User{},
-	//	&UserAgent{},
-	//	&Antenna{},
-	//	&FineTimestampKeyID{},
-	//	&Packet{},
-	//); err != nil {
-	//	log.Println("Unable autoMigrateDB - " + err.Error())
-	//}
+	log.Println("Performing auto migrate")
+	if err := db.AutoMigrate(
+		//	&Device{},
+		//	&Frequency{},
+		//	&DataRate{},
+		//	&CodingRate{},
+		//	&AccuracySource{},
+		//	&Experiment{},
+		//	&User{},
+		//	&UserAgent{},
+		//	&Antenna{},
+		//	&FineTimestampKeyID{},
+		//	&Packet{},
+		models...,
+	); err != nil {
+		log.Println("Unable autoMigrateDB - " + err.Error())
+	}
 }
 
 func InsertEntry(entry *Packet) error {
@@ -74,6 +93,10 @@ func InsertEntry(entry *Packet) error {
 }
 
 func InsertGatewayLocationsBatch(gatewayLocations []GatewayLocation) error {
+	if len(gatewayLocations) == 0 {
+		return errors.New("nothing to insert")
+	}
+
 	tx := db.Begin()
 	valueStrings := []string{}
 	valueArgs := []interface{}{}
@@ -98,7 +121,16 @@ func InsertGatewayLocationsBatch(gatewayLocations []GatewayLocation) error {
 	return err
 }
 
+func GetPacketsForAntennaAfter(antenna Antenna, afterTime time.Time) (*sql.Rows, error) {
+	// Get all existing packets since gateway last moved
+	return db.Model(&Packet{}).Where("antenna_id = ? AND time > ? AND experiment_id IS NULL", antenna.ID, afterTime).Rows() // server side cursor
+}
+
 func InsertPacketsBatch(packets []Packet) error {
+	if len(packets) == 0 {
+		return errors.New("nothing to insert")
+	}
+
 	tx := db.Begin()
 	valueStrings := []string{}
 	valueArgs := []interface{}{}
@@ -156,18 +188,169 @@ func InsertPacketsBatch(packets []Packet) error {
 	return err
 }
 
-func GetAllTtnV2Antennas() []Antenna {
+func GetAllGateways() []Gateway {
+	var gateways []Gateway
+	db.Order("id asc").Find(&gateways)
+	return gateways
+}
+
+func GetGatewaysWithId(gatewayId string) []Gateway {
+	var gateways []Gateway
+	db.Where("gateway_id = ?", gatewayId).Find(&gateways)
+	return gateways
+}
+
+func GetOnlineGatewaysForNetwork(networkId string) []Gateway {
+	var gateways []Gateway
+	db.Where("network_id = ? AND last_heard > NOW() - INTERVAL '5 DAY'", networkId).Find(&gateways)
+	return gateways
+}
+
+func GetGateway(indexer GatewayIndexer) (Gateway, error) {
+	var gatewayDb Gateway
+	i, ok := gatewayDbCache.Load(indexer)
+	if ok {
+		//log.Println("Gateway from cache")
+		gatewayDb = i.(Gateway)
+	} else {
+		gatewayDb = Gateway{NetworkId: indexer.NetworkId, GatewayId: indexer.GatewayId}
+		//log.Println("Gateway from DB")
+		err := db.First(&gatewayDb, &gatewayDb).Error
+		if err != nil {
+			return gatewayDb, err
+		}
+		if gatewayDb.ID != 0 {
+			gatewayDbCache.Store(indexer, gatewayDb)
+		}
+	}
+	return gatewayDb, nil
+}
+
+func GetGatewayLastMovedTime(networkId string, gatewayId string) time.Time {
+	var movedTime time.Time
+	lastMovedQuery := `
+SELECT max(installed_at) FROM gateway_locations
+WHERE network_id = ?
+AND gateway_id = ?`
+	timeRow := db.Raw(lastMovedQuery, networkId, gatewayId).Row()
+	timeRow.Scan(&movedTime)
+	return movedTime
+}
+
+func GetAllOldNamingTtnV2Antennas() []Antenna {
 	var antennas []Antenna
-	db.Where("network_id LIKE 'NS_TTN_V2://%'").Find(&antennas)
+	db.Where("network_id LIKE 'NS_TTN_V2://%' OR network_id LIKE 'NS_TTS_V3://ttnv2@000013'").Find(&antennas)
 	return antennas
 }
 
 func FindAntenna(networkId string, gatewayId string, antennaIndex uint8) Antenna {
-	antenna := Antenna{NetworkId: networkId, GatewayId: gatewayId, AntennaIndex: antennaIndex}
-	db.FirstOrCreate(&antenna, &antenna)
+	var antenna Antenna
+	antennaIndexer := AntennaIndexer{NetworkId: networkId, GatewayId: gatewayId, AntennaIndex: antennaIndex}
+
+	i, ok := antennaDbCache.Load(antennaIndexer)
+	if ok {
+		antenna = i.(Antenna)
+	} else {
+		antenna = Antenna{NetworkId: networkId, GatewayId: gatewayId, AntennaIndex: antennaIndex}
+		db.FirstOrCreate(&antenna, &antenna)
+	}
 	return antenna
+}
+
+func GetAntennaForGateway(networkId string, gatewayId string) []Antenna {
+	var antennas []Antenna
+	db.Where("network_id = ? and gateway_id = ?", networkId, gatewayId).Find(&antennas)
+	return antennas
+}
+
+func GetAntennasForNetwork(networkId string) []Antenna {
+	var antennas []Antenna
+	db.Where("network_id = ?", networkId).Find(&antennas)
+	return antennas
 }
 
 func UpdatePacketsAntennaId(oldAntennaId uint, newAntennaId uint) {
 	db.Model(&Packet{}).Where("antenna_id = ?", oldAntennaId).Update("antenna_id", newAntennaId)
+}
+
+func GetDistinctGatewaysInLocations() []GatewayIndexer {
+	var gateways []GatewayIndexer
+	db.Model(&GatewayLocation{}).Distinct("network_id", "gateway_id").Find(&gateways)
+	return gateways
+}
+
+func GetGatewayLocations(networkId string, gatewayId string) []GatewayLocation {
+	var locations []GatewayLocation
+	db.Where("network_id = ? and gateway_id = ?", networkId, gatewayId).Order("installed_at asc").Find(&locations)
+	return locations
+}
+
+func DeleteGatewayLocations(networkId string, gatewayId string) {
+	db.Where("network_id = ? and gateway_id = ?", networkId, gatewayId).Delete(GatewayLocation{})
+}
+
+func InsertGatewayLocations(locations []GatewayLocation) {
+	db.Create(&locations)
+}
+
+func GetGridcellsForAntenna(antenna Antenna) []GridCell {
+	var gridCells []GridCell
+	db.Where("antenna_id = ?", antenna.ID).Find(&gridCells)
+	return gridCells
+}
+
+func GetGridCell(indexer GridCellIndexer) (GridCell, error) {
+	var gridCell GridCell
+	gridCell.AntennaID = indexer.AntennaID
+	gridCell.X = indexer.X
+	gridCell.Y = indexer.Y
+	err := db.FirstOrCreate(&gridCell, &gridCell).Error
+	return gridCell, err
+}
+
+func SaveGridCell(gridCell GridCell) {
+	db.Save(&gridCell)
+}
+
+func CreateGridCells(gridCells []GridCell) error {
+	// On conflict override
+	tx := db.Clauses(clause.OnConflict{
+		UpdateAll: true,
+	}).Create(&gridCells)
+	return tx.Error
+}
+
+func DeleteGridCellsForAntenna(antenna Antenna) {
+	db.Where(&GridCell{AntennaID: antenna.ID}).Delete(&GridCell{})
+}
+
+func GetRadarBeam(indexer RadarBeamIndexer) (RadarBeam, error) {
+	var radarBeam RadarBeam
+	radarBeam.AntennaID = indexer.AntennaID
+	radarBeam.Level = indexer.Level
+	radarBeam.Bearing = indexer.Bearing
+	err := db.FirstOrCreate(&radarBeam, &radarBeam).Error
+	return radarBeam, err
+}
+
+func SaveRadarBeam(radarBeam RadarBeam) {
+	db.Save(&radarBeam)
+}
+
+func GetRadarBeamsForAntenna(antenna Antenna) []RadarBeam {
+	var radarBeams []RadarBeam
+	db.Where("antenna_id = ?", antenna.ID).Find(&radarBeams)
+	return radarBeams
+}
+
+func CreateRadarBeams(radarBeams []RadarBeam) error {
+	// On conflict override
+	tx := db.Clauses(clause.OnConflict{
+		UpdateAll: true,
+	}).Create(&radarBeams)
+	return tx.Error
+}
+
+func DeleteRadarBeamsForAntenna(antenna Antenna) {
+	db.Where(&RadarBeam{AntennaID: antenna.ID}).Delete(&RadarBeam{})
 }
