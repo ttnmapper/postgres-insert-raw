@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/patrickmn/go-cache"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -17,6 +18,7 @@ import (
 )
 
 var (
+	// Caches for static values, do not expire
 	deviceDbCache         sync.Map
 	antennaDbCache        sync.Map
 	gatewayDbCache        sync.Map
@@ -27,7 +29,11 @@ var (
 	userAgentDbCache      sync.Map
 	userIdDbCache         sync.Map
 	experimentNameDbCache sync.Map
-	db                    *gorm.DB
+
+	// Caches for dynamic content, needs to expire
+	networkOnlineGatewaysCache *cache.Cache
+
+	db *gorm.DB
 )
 
 type Context struct {
@@ -64,6 +70,9 @@ func (databaseContext *Context) Init() {
 	if err != nil {
 		panic(err.Error())
 	}
+
+	// Init caches
+	networkOnlineGatewaysCache = cache.New(5*time.Minute, 1*time.Minute)
 }
 
 func AutoMigrate(models ...interface{}) {
@@ -201,8 +210,17 @@ func GetGatewaysWithId(gatewayId string) []Gateway {
 }
 
 func GetOnlineGatewaysForNetwork(networkId string) []Gateway {
+
+	if cacheGateways, ok := networkOnlineGatewaysCache.Get(networkId); ok {
+		return cacheGateways.([]Gateway)
+	}
+
 	var gateways []Gateway
 	db.Where("network_id = ? AND last_heard > NOW() - INTERVAL '5 DAY'", networkId).Find(&gateways)
+
+	// Store in cache
+	networkOnlineGatewaysCache.Set(networkId, gateways, cache.DefaultExpiration)
+
 	return gateways
 }
 
