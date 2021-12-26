@@ -51,5 +51,6 @@ func main() {
 	router := Routes()
 
 	// Start the http endpoint
+	log.Println("Starting server on", myConfiguration.HttpListenAddress)
 	log.Fatal(http.ListenAndServe(myConfiguration.HttpListenAddress, router))
 }
