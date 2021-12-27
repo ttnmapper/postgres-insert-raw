@@ -25,6 +25,7 @@ func DbGatewaysToResponse(dbGateways []database.Gateway) []Gateway {
 }
 
 func DbGatewayToResponse(gateway database.Gateway) Gateway {
+
 	responseGw := Gateway{
 		DatabaseId: gateway.ID,
 		GatewayId:  gateway.GatewayId,
@@ -41,5 +42,6 @@ func DbGatewayToResponse(gateway database.Gateway) Gateway {
 	if gateway.GatewayEui != nil {
 		responseGw.GatewayEUI = *gateway.GatewayEui
 	}
+
 	return responseGw
 }

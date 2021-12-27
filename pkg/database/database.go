@@ -224,6 +224,17 @@ func GetOnlineGatewaysForNetwork(networkId string) []Gateway {
 	return gateways
 }
 
+func GetOnlineGatewaysForNetworkInBbox(networkId string, west float64, east float64, north float64, south float64) []Gateway {
+
+	var gateways []Gateway
+	db.Where("network_id = ? AND last_heard > NOW() - INTERVAL '5 DAY'", networkId).
+		Where("latitude >= ? AND latitude <= ? AND longitude >= ? AND longitude <= ?", south, north, west, east).
+		Where("NOT (latitude = 0 AND longitude = 0)").
+		Find(&gateways)
+
+	return gateways
+}
+
 func GetGateway(indexer GatewayIndexer) (Gateway, error) {
 	var gatewayDb Gateway
 	i, ok := gatewayDbCache.Load(indexer)
