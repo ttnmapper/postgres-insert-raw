@@ -27,7 +27,7 @@ func UplinkMessageToPacket(message types.TtnMapperUplinkMessage, gateway types.T
 	} else {
 		//log.Println("Get or create device from/in DB:", deviceIndexer)
 		deviceDb := Device{NetworkId: message.NetworkId, AppId: message.AppID, DevId: message.DevID, DevEui: message.DevEui}
-		err := db.FirstOrCreate(&deviceDb, &deviceDb).Error
+		err := Db.FirstOrCreate(&deviceDb, &deviceDb).Error
 		if err != nil {
 			return entry, err
 		}
@@ -45,7 +45,7 @@ func UplinkMessageToPacket(message types.TtnMapperUplinkMessage, gateway types.T
 		entry.FrequencyID = i.(uint)
 	} else {
 		frequencyDb := Frequency{Herz: message.Frequency}
-		err := db.FirstOrCreate(&frequencyDb, &frequencyDb).Error
+		err := Db.FirstOrCreate(&frequencyDb, &frequencyDb).Error
 		if err != nil {
 			return entry, err
 		}
@@ -68,7 +68,7 @@ func UplinkMessageToPacket(message types.TtnMapperUplinkMessage, gateway types.T
 			Bandwidth:       message.Bandwidth,
 			SpreadingFactor: message.SpreadingFactor,
 			Bitrate:         message.Bitrate}
-		err := db.FirstOrCreate(&dataRateDb, &dataRateDb).Error
+		err := Db.FirstOrCreate(&dataRateDb, &dataRateDb).Error
 		if err != nil {
 			return entry, err
 		}
@@ -82,7 +82,7 @@ func UplinkMessageToPacket(message types.TtnMapperUplinkMessage, gateway types.T
 		entry.CodingRateID = i.(uint)
 	} else {
 		codingRateDb := CodingRate{Name: message.CodingRate}
-		err := db.FirstOrCreate(&codingRateDb, &codingRateDb).Error
+		err := Db.FirstOrCreate(&codingRateDb, &codingRateDb).Error
 		if err != nil {
 			return entry, err
 		}
@@ -98,7 +98,7 @@ func UplinkMessageToPacket(message types.TtnMapperUplinkMessage, gateway types.T
 		entry.AntennaID = i.(uint)
 	} else {
 		antennaDb := Antenna{NetworkId: gateway.NetworkId, GatewayId: gateway.GatewayId, AntennaIndex: gateway.AntennaIndex}
-		err := db.FirstOrCreate(&antennaDb, &antennaDb).Error
+		err := Db.FirstOrCreate(&antennaDb, &antennaDb).Error
 		if err != nil {
 			return entry, err
 		}
@@ -133,7 +133,7 @@ func UplinkMessageToPacket(message types.TtnMapperUplinkMessage, gateway types.T
 	if gateway.FineTimestampEncryptedKeyId != "" {
 		// TODO: cache if this is done often
 		fineTimestampKeyId := FineTimestampKeyID{FineTimestampEncryptedKeyId: gateway.FineTimestampEncryptedKeyId}
-		err := db.FirstOrCreate(&fineTimestampKeyId, &fineTimestampKeyId).Error
+		err := Db.FirstOrCreate(&fineTimestampKeyId, &fineTimestampKeyId).Error
 		if err != nil {
 			return entry, err
 		}
@@ -173,7 +173,7 @@ func UplinkMessageToPacket(message types.TtnMapperUplinkMessage, gateway types.T
 		entry.AccuracySourceID = i.(uint)
 	} else {
 		accuracySourceDb := AccuracySource{Name: message.AccuracySource}
-		err := db.FirstOrCreate(&accuracySourceDb, &accuracySourceDb).Error
+		err := Db.FirstOrCreate(&accuracySourceDb, &accuracySourceDb).Error
 		if err != nil {
 			return entry, err
 		}
@@ -189,7 +189,7 @@ func UplinkMessageToPacket(message types.TtnMapperUplinkMessage, gateway types.T
 			entry.ExperimentID = &experimentId
 		} else {
 			experimentNameDb := Experiment{Name: message.Experiment}
-			err := db.FirstOrCreate(&experimentNameDb, &experimentNameDb).Error
+			err := Db.FirstOrCreate(&experimentNameDb, &experimentNameDb).Error
 			if err != nil {
 				return entry, err
 			}
@@ -204,7 +204,7 @@ func UplinkMessageToPacket(message types.TtnMapperUplinkMessage, gateway types.T
 		entry.UserID = i.(uint)
 	} else {
 		userIdDb := User{Identifier: message.UserId}
-		err := db.FirstOrCreate(&userIdDb, &userIdDb).Error
+		err := Db.FirstOrCreate(&userIdDb, &userIdDb).Error
 		if err != nil {
 			return entry, err
 		}
@@ -218,7 +218,7 @@ func UplinkMessageToPacket(message types.TtnMapperUplinkMessage, gateway types.T
 		entry.UserAgentID = i.(uint)
 	} else {
 		userAgentDb := UserAgent{Name: message.UserAgent}
-		err := db.FirstOrCreate(&userAgentDb, &userAgentDb).Error
+		err := Db.FirstOrCreate(&userAgentDb, &userAgentDb).Error
 		if err != nil {
 			return entry, err
 		}
@@ -230,5 +230,5 @@ func UplinkMessageToPacket(message types.TtnMapperUplinkMessage, gateway types.T
 }
 
 func ScanRows(row *sql.Rows, result interface{}) error {
-	return db.ScanRows(row, result)
+	return Db.ScanRows(row, result)
 }

@@ -33,7 +33,7 @@ var (
 	// Caches for dynamic content, needs to expire
 	networkOnlineGatewaysCache *cache.Cache
 
-	db *gorm.DB
+	Db *gorm.DB
 )
 
 type Context struct {
@@ -64,7 +64,7 @@ func (databaseContext *Context) Init() {
 		" application_name=" + applicationName
 	log.Println(dsn)
 	var err error
-	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+	Db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(gormLogLevel),
 	})
 	if err != nil {
@@ -78,7 +78,7 @@ func (databaseContext *Context) Init() {
 func AutoMigrate(models ...interface{}) {
 	// Create tables if they do not exist
 	log.Println("Performing auto migrate")
-	if err := db.AutoMigrate(
+	if err := Db.AutoMigrate(
 		//	&Device{},
 		//	&Frequency{},
 		//	&DataRate{},
@@ -97,7 +97,7 @@ func AutoMigrate(models ...interface{}) {
 }
 
 func InsertEntry(entry *Packet) error {
-	err := db.Create(&entry).Error
+	err := Db.Create(&entry).Error
 	return err
 }
 
@@ -106,7 +106,7 @@ func InsertGatewayLocationsBatch(gatewayLocations []GatewayLocation) error {
 		return errors.New("nothing to insert")
 	}
 
-	tx := db.Begin()
+	tx := Db.Begin()
 	valueStrings := []string{}
 	valueArgs := []interface{}{}
 	for _, location := range gatewayLocations {
@@ -132,7 +132,60 @@ func InsertGatewayLocationsBatch(gatewayLocations []GatewayLocation) error {
 
 func GetPacketsForAntennaAfter(antenna Antenna, afterTime time.Time) (*sql.Rows, error) {
 	// Get all existing packets since gateway last moved
-	return db.Model(&Packet{}).Where("antenna_id = ? AND time > ? AND experiment_id IS NULL", antenna.ID, afterTime).Rows() // server side cursor
+	return Db.Model(&Packet{}).Where("antenna_id = ? AND time > ? AND experiment_id IS NULL", antenna.ID, afterTime).Rows() // server side cursor
+}
+
+func GetPacketsForDevice(networkId string, applicationId string, deviceId string, startTime time.Time, endTime time.Time, limit int) (*sql.Rows, error) {
+	session := Db.Model(&Packet{})
+	session = session.Select("packets.id, packets.time, packets.f_port, packets.f_cnt, packets.gateway_time, fine_timestamp, packets.channel_index, packets.rssi, packets.signal_rssi, packets.snr, packets.latitude, packets.longitude, packets.altitude, packets.accuracy_meters, packets.satellites, packets.hdop, app_id, dev_id, dev_eui, d.network_id as device_network_id, f.herz as frequency, modulation, bandwidth, spreading_factor, bitrate, cr.name as coding_rate, a.network_id as gateway_network_id, gateway_id, antenna_index, \"as\".name as accuracy_source, ua.name as user_agent, e.name as experiment")
+	session = session.Joins("JOIN devices d on packets.device_id = d.id")
+	session = session.Joins("JOIN frequencies f on packets.frequency_id = f.id")
+	session = session.Joins("JOIN data_rates dr on packets.data_rate_id = dr.id")
+	session = session.Joins("JOIN coding_rates cr on packets.coding_rate_id = cr.id")
+	session = session.Joins("JOIN antennas a on packets.antenna_id = a.id")
+	session = session.Joins("JOIN accuracy_sources \"as\" on packets.accuracy_source_id = \"as\".id")
+	session = session.Joins("JOIN user_agents ua on packets.user_agent_id = ua.id")
+	session = session.Joins("JOIN users on packets.user_id = users.id")
+	session = session.Joins("LEFT JOIN experiments e on packets.experiment_id = e.id")
+
+	//session = session.Where("experiment_id IS NULL")
+	session = session.Where("d.dev_id = ?", deviceId)
+	session = session.Where("time > ? AND time < ?", startTime, endTime)
+	if networkId != "" {
+		session = session.Where("d.network_id = ?", networkId)
+	}
+	if applicationId != "" {
+		session = session.Where("d.app_id = ?", applicationId)
+	}
+
+	session = session.Limit(limit)
+
+	return session.Rows()
+}
+
+func GetPacketsForGateway(networkId string, gatewayId string, startTime time.Time, endTime time.Time, limit int) (*sql.Rows, error) {
+	session := Db.Model(&Packet{})
+	session = session.Select("packets.id, packets.time, packets.f_port, packets.f_cnt, packets.gateway_time, fine_timestamp, packets.channel_index, packets.rssi, packets.signal_rssi, packets.snr, packets.latitude, packets.longitude, packets.altitude, packets.accuracy_meters, packets.satellites, packets.hdop, app_id, dev_id, dev_eui, d.network_id as device_network_id, f.herz as frequency, modulation, bandwidth, spreading_factor, bitrate, cr.name as coding_rate, a.network_id as gateway_network_id, gateway_id, antenna_index, \"as\".name as accuracy_source, ua.name as user_agent, e.name as experiment")
+	session = session.Joins("JOIN devices d on packets.device_id = d.id")
+	session = session.Joins("JOIN frequencies f on packets.frequency_id = f.id")
+	session = session.Joins("JOIN data_rates dr on packets.data_rate_id = dr.id")
+	session = session.Joins("JOIN coding_rates cr on packets.coding_rate_id = cr.id")
+	session = session.Joins("JOIN antennas a on packets.antenna_id = a.id")
+	session = session.Joins("JOIN accuracy_sources \"as\" on packets.accuracy_source_id = \"as\".id")
+	session = session.Joins("JOIN user_agents ua on packets.user_agent_id = ua.id")
+	session = session.Joins("JOIN users on packets.user_id = users.id")
+	session = session.Joins("LEFT JOIN experiments e on packets.experiment_id = e.id")
+
+	//session = session.Where("experiment_id IS NULL")
+	session = session.Where("a.gateway_id = ?", gatewayId)
+	session = session.Where("time > ? AND time < ?", startTime, endTime)
+	if networkId != "" {
+		session = session.Where("a.network_id = ?", networkId)
+	}
+
+	session = session.Limit(limit)
+
+	return session.Rows()
 }
 
 func InsertPacketsBatch(packets []Packet) error {
@@ -140,7 +193,7 @@ func InsertPacketsBatch(packets []Packet) error {
 		return errors.New("nothing to insert")
 	}
 
-	tx := db.Begin()
+	tx := Db.Begin()
 	valueStrings := []string{}
 	valueArgs := []interface{}{}
 	fieldNames := "time, device_id, f_port, f_cnt, frequency_id, data_rate_id, coding_rate_id, " +
@@ -199,13 +252,13 @@ func InsertPacketsBatch(packets []Packet) error {
 
 func GetAllGateways() []Gateway {
 	var gateways []Gateway
-	db.Order("id asc").Find(&gateways)
+	Db.Order("id asc").Find(&gateways)
 	return gateways
 }
 
 func GetGatewaysWithId(gatewayId string) []Gateway {
 	var gateways []Gateway
-	db.Where("gateway_id = ?", gatewayId).Find(&gateways)
+	Db.Where("gateway_id = ?", gatewayId).Find(&gateways)
 	return gateways
 }
 
@@ -216,7 +269,7 @@ func GetOnlineGatewaysForNetwork(networkId string) []Gateway {
 	}
 
 	var gateways []Gateway
-	db.Where("network_id = ? AND last_heard > NOW() - INTERVAL '5 DAY'", networkId).Find(&gateways)
+	Db.Where("network_id = ? AND last_heard > NOW() - INTERVAL '5 DAY'", networkId).Find(&gateways)
 
 	// Store in cache
 	networkOnlineGatewaysCache.Set(networkId, gateways, cache.DefaultExpiration)
@@ -227,7 +280,7 @@ func GetOnlineGatewaysForNetwork(networkId string) []Gateway {
 func GetOnlineGatewaysForNetworkInBbox(networkId string, west float64, east float64, north float64, south float64) []Gateway {
 
 	var gateways []Gateway
-	db.Where("network_id = ? AND last_heard > NOW() - INTERVAL '5 DAY'", networkId).
+	Db.Where("network_id = ? AND last_heard > NOW() - INTERVAL '5 DAY'", networkId).
 		Where("latitude >= ? AND latitude <= ? AND longitude >= ? AND longitude <= ?", south, north, west, east).
 		Where("NOT (latitude = 0 AND longitude = 0)").
 		Find(&gateways)
@@ -244,7 +297,7 @@ func GetGateway(indexer GatewayIndexer) (Gateway, error) {
 	} else {
 		gatewayDb = Gateway{NetworkId: indexer.NetworkId, GatewayId: indexer.GatewayId}
 		//log.Println("Gateway from DB")
-		err := db.First(&gatewayDb, &gatewayDb).Error
+		err := Db.First(&gatewayDb, &gatewayDb).Error
 		if err != nil {
 			return gatewayDb, err
 		}
@@ -261,14 +314,14 @@ func GetGatewayLastMovedTime(networkId string, gatewayId string) time.Time {
 SELECT max(installed_at) FROM gateway_locations
 WHERE network_id = ?
 AND gateway_id = ?`
-	timeRow := db.Raw(lastMovedQuery, networkId, gatewayId).Row()
+	timeRow := Db.Raw(lastMovedQuery, networkId, gatewayId).Row()
 	timeRow.Scan(&movedTime)
 	return movedTime
 }
 
 func GetAllOldNamingTtnV2Antennas() []Antenna {
 	var antennas []Antenna
-	db.Where("network_id LIKE 'NS_TTN_V2://%' OR network_id LIKE 'NS_TTS_V3://ttnv2@000013'").Find(&antennas)
+	Db.Where("network_id LIKE 'NS_TTN_V2://%' OR network_id LIKE 'NS_TTS_V3://ttnv2@000013'").Find(&antennas)
 	return antennas
 }
 
@@ -281,50 +334,50 @@ func FindAntenna(networkId string, gatewayId string, antennaIndex uint8) Antenna
 		antenna = i.(Antenna)
 	} else {
 		antenna = Antenna{NetworkId: networkId, GatewayId: gatewayId, AntennaIndex: antennaIndex}
-		db.FirstOrCreate(&antenna, &antenna)
+		Db.FirstOrCreate(&antenna, &antenna)
 	}
 	return antenna
 }
 
 func GetAntennaForGateway(networkId string, gatewayId string) []Antenna {
 	var antennas []Antenna
-	db.Where("network_id = ? and gateway_id = ?", networkId, gatewayId).Find(&antennas)
+	Db.Where("network_id = ? and gateway_id = ?", networkId, gatewayId).Find(&antennas)
 	return antennas
 }
 
 func GetAntennasForNetwork(networkId string) []Antenna {
 	var antennas []Antenna
-	db.Where("network_id = ?", networkId).Find(&antennas)
+	Db.Where("network_id = ?", networkId).Find(&antennas)
 	return antennas
 }
 
 func UpdatePacketsAntennaId(oldAntennaId uint, newAntennaId uint) {
-	db.Model(&Packet{}).Where("antenna_id = ?", oldAntennaId).Update("antenna_id", newAntennaId)
+	Db.Model(&Packet{}).Where("antenna_id = ?", oldAntennaId).Update("antenna_id", newAntennaId)
 }
 
 func GetDistinctGatewaysInLocations() []GatewayIndexer {
 	var gateways []GatewayIndexer
-	db.Model(&GatewayLocation{}).Distinct("network_id", "gateway_id").Find(&gateways)
+	Db.Model(&GatewayLocation{}).Distinct("network_id", "gateway_id").Find(&gateways)
 	return gateways
 }
 
 func GetGatewayLocations(networkId string, gatewayId string) []GatewayLocation {
 	var locations []GatewayLocation
-	db.Where("network_id = ? and gateway_id = ?", networkId, gatewayId).Order("installed_at asc").Find(&locations)
+	Db.Where("network_id = ? and gateway_id = ?", networkId, gatewayId).Order("installed_at asc").Find(&locations)
 	return locations
 }
 
 func DeleteGatewayLocations(networkId string, gatewayId string) {
-	db.Where("network_id = ? and gateway_id = ?", networkId, gatewayId).Delete(GatewayLocation{})
+	Db.Where("network_id = ? and gateway_id = ?", networkId, gatewayId).Delete(GatewayLocation{})
 }
 
 func InsertGatewayLocations(locations []GatewayLocation) {
-	db.Create(&locations)
+	Db.Create(&locations)
 }
 
 func GetGridcellsForAntenna(antenna Antenna) []GridCell {
 	var gridCells []GridCell
-	db.Where("antenna_id = ?", antenna.ID).Find(&gridCells)
+	Db.Where("antenna_id = ?", antenna.ID).Find(&gridCells)
 	return gridCells
 }
 
@@ -333,24 +386,24 @@ func GetGridCell(indexer GridCellIndexer) (GridCell, error) {
 	gridCell.AntennaID = indexer.AntennaID
 	gridCell.X = indexer.X
 	gridCell.Y = indexer.Y
-	err := db.FirstOrCreate(&gridCell, &gridCell).Error
+	err := Db.FirstOrCreate(&gridCell, &gridCell).Error
 	return gridCell, err
 }
 
 func SaveGridCell(gridCell GridCell) {
-	db.Save(&gridCell)
+	Db.Save(&gridCell)
 }
 
 func CreateGridCells(gridCells []GridCell) error {
 	// On conflict override
-	tx := db.Clauses(clause.OnConflict{
+	tx := Db.Clauses(clause.OnConflict{
 		UpdateAll: true,
 	}).Create(&gridCells)
 	return tx.Error
 }
 
 func DeleteGridCellsForAntenna(antenna Antenna) {
-	db.Where(&GridCell{AntennaID: antenna.ID}).Delete(&GridCell{})
+	Db.Where(&GridCell{AntennaID: antenna.ID}).Delete(&GridCell{})
 }
 
 func GetRadarBeam(indexer RadarBeamIndexer) (RadarBeam, error) {
@@ -358,28 +411,28 @@ func GetRadarBeam(indexer RadarBeamIndexer) (RadarBeam, error) {
 	radarBeam.AntennaID = indexer.AntennaID
 	radarBeam.Level = indexer.Level
 	radarBeam.Bearing = indexer.Bearing
-	err := db.FirstOrCreate(&radarBeam, &radarBeam).Error
+	err := Db.FirstOrCreate(&radarBeam, &radarBeam).Error
 	return radarBeam, err
 }
 
 func SaveRadarBeam(radarBeam RadarBeam) {
-	db.Save(&radarBeam)
+	Db.Save(&radarBeam)
 }
 
 func GetRadarBeamsForAntenna(antenna Antenna) []RadarBeam {
 	var radarBeams []RadarBeam
-	db.Where("antenna_id = ?", antenna.ID).Find(&radarBeams)
+	Db.Where("antenna_id = ?", antenna.ID).Find(&radarBeams)
 	return radarBeams
 }
 
 func CreateRadarBeams(radarBeams []RadarBeam) error {
 	// On conflict override
-	tx := db.Clauses(clause.OnConflict{
+	tx := Db.Clauses(clause.OnConflict{
 		UpdateAll: true,
 	}).Create(&radarBeams)
 	return tx.Error
 }
 
 func DeleteRadarBeamsForAntenna(antenna Antenna) {
-	db.Where(&RadarBeam{AntennaID: antenna.ID}).Delete(&RadarBeam{})
+	Db.Where(&RadarBeam{AntennaID: antenna.ID}).Delete(&RadarBeam{})
 }

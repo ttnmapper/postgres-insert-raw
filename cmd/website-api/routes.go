@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/render"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
+	"ttnmapper-postgres-insert-raw/cmd/website-api/device"
 	"ttnmapper-postgres-insert-raw/cmd/website-api/gateway"
 	"ttnmapper-postgres-insert-raw/cmd/website-api/network"
 )
@@ -54,6 +55,7 @@ func Routes() *chi.Mux {
 
 	router.Mount("/gateway", gateway.Routes())
 	router.Mount("/network", network.Routes())
+	router.Mount("/device", device.Routes())
 
 	return router
 }
