@@ -65,3 +65,8 @@ type DeviceMeasurement struct {
 
 	Experiment string `json:"experiment"`
 }
+
+type ExperimentResponse struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
+}

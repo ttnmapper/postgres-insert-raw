@@ -6,7 +6,7 @@ import (
 
 type Packet struct {
 	ID   uint
-	Time time.Time `gorm:"not null;index:idx_packets_antenna_id_time_experiment_id,priority:3;index:idx_packets_device_id_time,priority:2"` // index priority 11 is lower than default 10. Device and gateway is less unique, so will filter better first step.
+	Time time.Time `gorm:"not null;index:idx_packets_antenna_id_time_experiment_id,priority:3;index:idx_packets_device_id_time,priority:2;index:idx_packets_experiment_id_time,where:experiment_id is not null,priority:2"` // index priority 11 is lower than default 10. Device and gateway is less unique, so will filter better first step.
 
 	DeviceID uint `gorm:"not null;index:idx_packets_device_id_time_experiment_id,priority:1"`
 
@@ -38,7 +38,7 @@ type Packet struct {
 	Hdop             *float64 `gorm:"type:numeric(4,1)"`
 	AccuracySourceID uint
 
-	ExperimentID *uint `gorm:"index:idx_packets_device_id_time_experiment_id,priority:2,index:idx_packets_antenna_id_latitude_experiment_id,priority:3;index:idx_packets_antenna_id_longitude_experiment_id,priority:3"`
+	ExperimentID *uint `gorm:"index:idx_packets_device_id_time_experiment_id,priority:2,index:idx_packets_antenna_id_latitude_experiment_id,priority:3;index:idx_packets_antenna_id_longitude_experiment_id,priority:3;index:idx_packets_experiment_id_time,where:experiment_id is not null,priority:1"`
 
 	UserID      uint
 	UserAgentID uint

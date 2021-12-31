@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
+	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -49,8 +50,10 @@ func GetGatewayDetails(writer http.ResponseWriter, request *http.Request) {
 	indexer := database.GatewayIndexer{NetworkId: networkId, GatewayId: gatewayId}
 	gateway, err := database.GetGateway(indexer)
 	if err != nil {
-		responses.RenderError(writer, request, err)
-		return
+		log.Println(err.Error())
+		//responses.RenderError(writer, request, err)
+		//return
+		gateway = database.Gateway{GatewayId: gatewayId, NetworkId: networkId}
 	}
 
 	responseGateway := responses.DbGatewayToResponse(gateway)

@@ -170,7 +170,7 @@ func insertToPostgres(thread int) {
 			}
 
 			// Insert into database
-			err = database.InsertEntry(&entry)
+			err = database.InsertPacket(&entry)
 			if err == nil {
 				log.Printf("[%d][p] Inserted entry id=%d", thread, entry.ID)
 				dbInserts.Inc()
