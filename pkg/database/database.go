@@ -16,7 +16,6 @@ var (
 	// Caches for static values, do not expire
 	deviceDbCache         sync.Map
 	antennaDbCache        sync.Map
-	gatewayDbCache        sync.Map
 	dataRateDbCache       sync.Map
 	codingRateDbCache     sync.Map
 	frequencyDbCache      sync.Map
@@ -26,6 +25,7 @@ var (
 	experimentNameDbCache sync.Map
 
 	// Caches for dynamic content, needs to expire
+	gatewayDbCache             *cache.Cache
 	networkOnlineGatewaysCache *cache.Cache
 
 	Db *gorm.DB
@@ -67,6 +67,7 @@ func (databaseContext *Context) Init() {
 	}
 
 	// Init caches
+	gatewayDbCache = cache.New(5*time.Minute, 1*time.Minute)
 	networkOnlineGatewaysCache = cache.New(5*time.Minute, 1*time.Minute)
 }
 

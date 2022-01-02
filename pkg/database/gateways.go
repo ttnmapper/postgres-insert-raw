@@ -77,10 +77,10 @@ func GetOnlineGatewaysForNetworkInBbox(networkId string, west float64, east floa
 
 func GetGateway(indexer GatewayIndexer) (Gateway, error) {
 	var gatewayDb Gateway
-	i, ok := gatewayDbCache.Load(indexer)
-	if ok {
-		//log.Println("Gateway from cache")
-		gatewayDb = i.(Gateway)
+
+	var gatewayIndex = indexer.NetworkId + "/" + indexer.GatewayId
+	if cacheGateway, ok := networkOnlineGatewaysCache.Get(gatewayIndex); ok {
+		return cacheGateway.(Gateway), nil
 	} else {
 		gatewayDb = Gateway{NetworkId: indexer.NetworkId, GatewayId: indexer.GatewayId}
 		//log.Println("Gateway from DB")
@@ -89,7 +89,7 @@ func GetGateway(indexer GatewayIndexer) (Gateway, error) {
 			return gatewayDb, err
 		}
 		if gatewayDb.ID != 0 {
-			gatewayDbCache.Store(indexer, gatewayDb)
+			gatewayDbCache.Set(gatewayIndex, gatewayDb, cache.DefaultExpiration)
 		}
 	}
 	return gatewayDb, nil
