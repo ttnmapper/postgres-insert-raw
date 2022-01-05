@@ -31,7 +31,7 @@ func GetPacketsForDevice(networkId string, applicationId string, deviceId string
 	session = session.Joins("JOIN users on packets.user_id = users.id")
 	session = session.Joins("LEFT JOIN experiments e on packets.experiment_id = e.id")
 
-	//session = session.Where("experiment_id IS NULL")
+	session = session.Where("experiment_id IS NULL")
 	session = session.Where("d.dev_id = ?", deviceId)
 	session = session.Where("time > ? AND time < ?", startTime, endTime)
 	if networkId != "" {
@@ -59,7 +59,7 @@ func GetPacketsForGateway(networkId string, gatewayId string, startTime time.Tim
 	session = session.Joins("JOIN users on packets.user_id = users.id")
 	session = session.Joins("LEFT JOIN experiments e on packets.experiment_id = e.id")
 
-	//session = session.Where("experiment_id IS NULL")
+	session = session.Where("experiment_id IS NULL")
 	session = session.Where("a.gateway_id = ?", gatewayId)
 	session = session.Where("time > ? AND time < ?", startTime, endTime)
 	if networkId != "" {
