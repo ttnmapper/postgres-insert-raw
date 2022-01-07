@@ -15,7 +15,7 @@ type Configuration struct {
 	PostgresDatabase string `envconfig:"POSTGRES_DATABASE"`
 	PostgresDebugLog bool   `envconfig:"POSTGRES_DEBUG_LOG"`
 
-	HttpListenAddress string `env:"HTTP_LISTEN_ADDRESS"`
+	HttpListenAddress string `envconfig:"HTTP_LISTEN_ADDRESS"`
 }
 
 var myConfiguration = Configuration{

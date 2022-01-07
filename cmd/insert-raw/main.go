@@ -2,11 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/streadway/amqp"
-	"github.com/tkanos/gonfig"
 	"log"
 	"net/http"
 	"time"
@@ -17,23 +17,23 @@ import (
 )
 
 type Configuration struct {
-	AmqpHost                 string `env:"AMQP_HOST"`
-	AmqpPort                 string `env:"AMQP_PORT"`
-	AmqpUser                 string `env:"AMQP_USER"`
-	AmqpPassword             string `env:"AMQP_PASSWORD"`
-	AmqpExchangeRawData      string `env:"AMQP_EXCHANGE_RAW"`
-	AmqpQueue                string `env:"AMQP_QUEUE"`
-	AmqpExchangeInsertedData string `env:"AMQP_EXCHANGE_INSERTED"`
+	AmqpHost                 string `envconfig:"AMQP_HOST"`
+	AmqpPort                 string `envconfig:"AMQP_PORT"`
+	AmqpUser                 string `envconfig:"AMQP_USER"`
+	AmqpPassword             string `envconfig:"AMQP_PASSWORD"`
+	AmqpExchangeRawData      string `envconfig:"AMQP_EXCHANGE_RAW"`
+	AmqpQueue                string `envconfig:"AMQP_QUEUE"`
+	AmqpExchangeInsertedData string `envconfig:"AMQP_EXCHANGE_INSERTED"`
 
-	PostgresHost          string `env:"POSTGRES_HOST"`
-	PostgresPort          string `env:"POSTGRES_PORT"`
-	PostgresUser          string `env:"POSTGRES_USER"`
-	PostgresPassword      string `env:"POSTGRES_PASSWORD"`
-	PostgresDatabase      string `env:"POSTGRES_DATABASE"`
-	PostgresDebugLog      bool   `env:"POSTGRES_DEBUG_LOG"`
-	PostgresInsertThreads int    `env:"POSTGRES_INSERT_THREADS"`
+	PostgresHost          string `envconfig:"POSTGRES_HOST"`
+	PostgresPort          string `envconfig:"POSTGRES_PORT"`
+	PostgresUser          string `envconfig:"POSTGRES_USER"`
+	PostgresPassword      string `envconfig:"POSTGRES_PASSWORD"`
+	PostgresDatabase      string `envconfig:"POSTGRES_DATABASE"`
+	PostgresDebugLog      bool   `envconfig:"POSTGRES_DEBUG_LOG"`
+	PostgresInsertThreads int    `envconfig:"POSTGRES_INSERT_THREADS"`
 
-	PrometheusPort string `env:"PROMETHEUS_PORT"`
+	PrometheusPort string `envconfig:"PROMETHEUS_PORT"`
 }
 
 var myConfiguration = Configuration{
@@ -78,9 +78,9 @@ var (
 
 func main() {
 
-	err := gonfig.GetConf("conf.json", &myConfiguration)
+	err := envconfig.Process("", &myConfiguration)
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err.Error())
 	}
 
 	log.Printf("[Configuration]\n%s\n", utils.PrettyPrint(myConfiguration)) // output: [UserA, UserB]
