@@ -165,7 +165,8 @@ func UpdateGateway(gateway types.TtnMapperGateway) {
 	attributes := make(map[string]interface{}, 0)
 	err = json.Unmarshal(gatewayDb.Attributes, &attributes)
 	if err != nil {
-		log.Println(err.Error())
+		//log.Println(err.Error())
+		// This means the database does not contain any data
 	}
 	// Add new attributes one by one
 	for k, v := range gateway.Attributes {
