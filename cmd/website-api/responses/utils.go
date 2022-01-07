@@ -44,12 +44,12 @@ func DbGatewayToResponse(gateway database.Gateway) Gateway {
 		responseGw.Name = *gateway.Name
 	}
 
-	var attributes interface{}
-	err := json.Unmarshal(gateway.Attributes, attributes)
+	var attributes map[string]interface{}
+	err := json.Unmarshal(gateway.Attributes, &attributes)
 	if err != nil {
 		// nothing
 	}
-	responseGw.Attributes = attributes.(map[string]interface{})
+	responseGw.Attributes = attributes
 
 	return responseGw
 }
