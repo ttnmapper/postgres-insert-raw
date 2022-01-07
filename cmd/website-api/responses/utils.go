@@ -44,7 +44,7 @@ func DbGatewayToResponse(gateway database.Gateway) Gateway {
 		responseGw.Name = *gateway.Name
 	}
 
-	var attributes map[string]interface{}
+	attributes := make(map[string]interface{}, 0)
 	err := json.Unmarshal(gateway.Attributes, &attributes)
 	if err != nil {
 		// nothing
