@@ -1,6 +1,7 @@
 package responses
 
 import (
+	"encoding/json"
 	"github.com/go-chi/render"
 	"net/http"
 	"ttnmapper-postgres-insert-raw/pkg/database"
@@ -28,20 +29,27 @@ func DbGatewayToResponse(gateway database.Gateway) Gateway {
 
 	responseGw := Gateway{
 		DatabaseId: gateway.ID,
-		GatewayId:  gateway.GatewayId,
 		NetworkId:  gateway.NetworkId,
+		GatewayId:  gateway.GatewayId,
 		LastHeard:  gateway.LastHeard,
 		Latitude:   gateway.Latitude,
 		Longitude:  gateway.Longitude,
 		Altitude:   gateway.Altitude,
 	}
 
-	if gateway.Description != nil {
-		responseGw.Description = *gateway.Description
-	}
 	if gateway.GatewayEui != nil {
 		responseGw.GatewayEUI = *gateway.GatewayEui
 	}
+	if gateway.Name != nil {
+		responseGw.Name = *gateway.Name
+	}
+
+	var attributes interface{}
+	err := json.Unmarshal(gateway.Attributes, attributes)
+	if err != nil {
+		// nothing
+	}
+	responseGw.Attributes = attributes.(map[string]interface{})
 
 	return responseGw
 }
