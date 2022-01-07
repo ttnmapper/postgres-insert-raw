@@ -1,0 +1,20 @@
+FROM golang:latest as builder
+
+WORKDIR /go-modules
+
+COPY . ./
+
+# Building using -mod=vendor, which will utilize the v
+#RUN go get
+#RUN go mod vendor
+RUN CGO_ENABLED=0 GOOS=linux go build -v -mod=vendor -o gateway-update ttnmapper-postgres-insert-raw/cmd/gateway-update
+
+#FROM alpine:3.8
+FROM scratch
+
+WORKDIR /root/
+
+COPY --from=builder /go-modules/gateway-update .
+COPY conf.json .
+
+CMD ["./gateway-update"]

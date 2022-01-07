@@ -85,6 +85,7 @@ func HeliumHotspotToTtnMapperGateway(hotspot Hotspot) (types.TtnMapperGateway, e
 		LocationSource:   "",
 	}
 
+	gateway.Attributes = make(map[string]interface{}, 0)
 	gateway.Attributes["mode"] = hotspot.Mode
 	gateway.Attributes["timestamp_added"] = hotspot.TimestampAdded.UnixNano()
 	gateway.Attributes["gain"] = hotspot.Gain

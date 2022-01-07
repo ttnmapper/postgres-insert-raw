@@ -126,6 +126,7 @@ func TtsApiGatewayToTtnMapperGateway(tenantId string, gatewayIn Gateway, statusI
 		LocationSource:              locationSource,
 		Name:                        gatewayIn.Name,
 	}
+	gatewayOut.Attributes = make(map[string]interface{}, 0)
 	gatewayOut.Attributes["description"] = gatewayIn.Description
 	gatewayOut.Attributes["cluster_id"] = gatewayIn.GatewayServerAddress
 	gatewayOut.Attributes["frequency_plans"] = gatewayIn.FrequencyPlanIds

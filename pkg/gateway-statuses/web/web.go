@@ -84,7 +84,10 @@ func WebGatewayToTtnMapperGateway(gatewayIn WebGateway) types.TtnMapperGateway {
 
 	// V3 has name and description, V2 has description
 	gatewayOut.Name = gatewayIn.Name
-	gatewayOut.Attributes["description"] = gatewayIn.Description
+	gatewayOut.Attributes = make(map[string]interface{}, 0)
+	if gatewayIn.Description != "" {
+		gatewayOut.Attributes["description"] = gatewayIn.Description
+	}
 
 	return gatewayOut
 }

@@ -112,6 +112,7 @@ func PbGatewayToTtnMapperGateway(gatewayIn Openapi.Gateway) (types.TtnMapperGate
 	//	gatewayOut.LocationAccuracy = int32(*hdop)
 	//}
 
+	gatewayOut.Attributes = make(map[string]interface{}, 0)
 	gatewayOut.Attributes["cluster_id"] = gatewayIn.ClusterID
 
 	return gatewayOut, nil

@@ -144,23 +144,41 @@ func UpdateGateway(gateway types.TtnMapperGateway) {
 	// Update gateway in db with fields that are set
 	gatewayDb.LastHeard = lastHeard
 	if gateway.GatewayEui != "" {
-		gatewayDb.GatewayEui = &gateway.GatewayEui
+		eui := gateway.GatewayEui
+		gatewayDb.GatewayEui = &eui
 	}
 	if gateway.Name != "" {
-		gatewayDb.Name = &gateway.Name
-	}
-	gatewayDb.Attributes, err = json.Marshal(gateway.Attributes)
-	if err != nil {
-		log.Println(err.Error())
+		name := gateway.Name
+		gatewayDb.Name = &name
 	}
 
 	if gateway.LocationAccuracy != 0 {
-		gatewayDb.LocationAccuracy = &gateway.LocationAccuracy
+		accuracy := gateway.LocationAccuracy
+		gatewayDb.LocationAccuracy = &accuracy
 	}
 	if gateway.LocationSource != "" {
-		gatewayDb.LocationSource = &gateway.LocationSource
+		source := gateway.LocationSource
+		gatewayDb.LocationSource = &source
 	}
 
+	// Old attributes unmarshal
+	attributes := make(map[string]interface{}, 0)
+	err = json.Unmarshal(gatewayDb.Attributes, &attributes)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	// Add new attributes one by one
+	for k, v := range gateway.Attributes {
+		attributes[k] = v
+	}
+	// Marshal new attributes
+	newAttributes, err := json.Marshal(attributes)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	gatewayDb.Attributes = newAttributes
+
+	// Update in database
 	database.SaveGateway(&gatewayDb)
 
 	log.Println("\tUpdated")
