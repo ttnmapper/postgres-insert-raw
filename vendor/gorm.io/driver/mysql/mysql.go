@@ -19,6 +19,7 @@ import (
 
 type Config struct {
 	DriverName                string
+	ServerVersion             string
 	DSN                       string
 	Conn                      gorm.ConnPool
 	SkipInitializeWithVersion bool
@@ -35,9 +36,11 @@ type Dialector struct {
 }
 
 var (
-	// UpdateClauses update clauses setting
+	// CreateClauses create clauses
+	CreateClauses = []string{"INSERT", "VALUES", "ON CONFLICT"}
+	// UpdateClauses update clauses
 	UpdateClauses = []string{"UPDATE", "SET", "WHERE", "ORDER BY", "LIMIT"}
-	// DeleteClauses delete clauses setting
+	// DeleteClauses delete clauses
 	DeleteClauses = []string{"DELETE", "FROM", "WHERE", "ORDER BY", "LIMIT"}
 
 	defaultDatetimePrecision = 3
@@ -82,6 +85,7 @@ func (dialector Dialector) Initialize(db *gorm.DB) (err error) {
 
 	// register callbacks
 	callbacks.RegisterDefaultCallbacks(db, &callbacks.Config{
+		CreateClauses: CreateClauses,
 		UpdateClauses: UpdateClauses,
 		DeleteClauses: DeleteClauses,
 	})
@@ -104,24 +108,23 @@ func (dialector Dialector) Initialize(db *gorm.DB) (err error) {
 	}
 
 	if !dialector.Config.SkipInitializeWithVersion {
-		var version string
-		err = db.ConnPool.QueryRowContext(ctx, "SELECT VERSION()").Scan(&version)
+		err = db.ConnPool.QueryRowContext(ctx, "SELECT VERSION()").Scan(&dialector.ServerVersion)
 		if err != nil {
 			return err
 		}
 
-		if strings.Contains(version, "MariaDB") {
+		if strings.Contains(dialector.ServerVersion, "MariaDB") {
 			dialector.Config.DontSupportRenameIndex = true
 			dialector.Config.DontSupportRenameColumn = true
 			dialector.Config.DontSupportForShareClause = true
-		} else if strings.HasPrefix(version, "5.6.") {
+		} else if strings.HasPrefix(dialector.ServerVersion, "5.6.") {
 			dialector.Config.DontSupportRenameIndex = true
 			dialector.Config.DontSupportRenameColumn = true
 			dialector.Config.DontSupportForShareClause = true
-		} else if strings.HasPrefix(version, "5.7.") {
+		} else if strings.HasPrefix(dialector.ServerVersion, "5.7.") {
 			dialector.Config.DontSupportRenameColumn = true
 			dialector.Config.DontSupportForShareClause = true
-		} else if strings.HasPrefix(version, "5.") {
+		} else if strings.HasPrefix(dialector.ServerVersion, "5.") {
 			dialector.Config.DisableDatetimePrecision = true
 			dialector.Config.DontSupportRenameIndex = true
 			dialector.Config.DontSupportRenameColumn = true
@@ -391,11 +394,9 @@ func (dialector Dialector) getSchemaIntAndUnitType(field *schema.Field) string {
 }
 
 func (dialector Dialector) SavePoint(tx *gorm.DB, name string) error {
-	tx.Exec("SAVEPOINT " + name)
-	return nil
+	return tx.Exec("SAVEPOINT " + name).Error
 }
 
 func (dialector Dialector) RollbackTo(tx *gorm.DB, name string) error {
-	tx.Exec("ROLLBACK TO SAVEPOINT " + name)
-	return nil
+	return tx.Exec("ROLLBACK TO SAVEPOINT " + name).Error
 }

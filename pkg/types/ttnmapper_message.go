@@ -4,6 +4,7 @@ const (
 	NS_TTN_V2 = "NS_TTN_V2"
 	NS_TTS_V3 = "NS_TTS_V3"
 	NS_CHIRP  = "NS_CHIRP"
+	NS_HELIUM = "NS_HELIUM"
 )
 
 type TtnMapperUplinkMessage struct {
@@ -94,7 +95,8 @@ type TtnMapperGateway struct {
 	LocationSource string `json:"location_source,omitempty"`
 
 	// Some sources of statuses provide the description
-	Description string `json:"description,omitempty"`
+	Name       string                 `json:"description,omitempty"`
+	Attributes map[string]interface{} `json:"attributes"`
 }
 
 type TtnMapperGatewayMoved struct {

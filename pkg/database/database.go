@@ -91,3 +91,9 @@ func AutoMigrate(models ...interface{}) {
 		log.Println("Unable autoMigrateDB - " + err.Error())
 	}
 }
+
+func GetAllTtsNetworksToFetch() []TtsV3FetchStatus {
+	var networks []TtsV3FetchStatus
+	Db.Find(&networks)
+	return networks
+}

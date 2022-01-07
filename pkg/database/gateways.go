@@ -6,6 +6,7 @@ import (
 	"github.com/patrickmn/go-cache"
 	"strings"
 	"time"
+	"ttnmapper-postgres-insert-raw/pkg/types"
 )
 
 func InsertGatewayLocationsBatch(gatewayLocations []GatewayLocation) error {
@@ -95,6 +96,30 @@ func GetGateway(indexer GatewayIndexer) (Gateway, error) {
 	return gatewayDb, nil
 }
 
+func GetOrCreateGateway(indexer GatewayIndexer) (Gateway, error) {
+	var gatewayDb Gateway
+
+	var gatewayIndex = indexer.NetworkId + "/" + indexer.GatewayId
+	if cacheGateway, ok := networkOnlineGatewaysCache.Get(gatewayIndex); ok {
+		return cacheGateway.(Gateway), nil
+	} else {
+		gatewayDb = Gateway{NetworkId: indexer.NetworkId, GatewayId: indexer.GatewayId}
+		//log.Println("Gateway from DB")
+		err := Db.FirstOrCreate(&gatewayDb, &gatewayDb).Error
+		if err != nil {
+			return gatewayDb, err
+		}
+		if gatewayDb.ID != 0 {
+			gatewayDbCache.Set(gatewayIndex, gatewayDb, cache.DefaultExpiration)
+		}
+	}
+	return gatewayDb, nil
+}
+
+func SaveGateway(gateway *Gateway) {
+	Db.Save(gateway)
+}
+
 func GetGatewayLastMovedTime(networkId string, gatewayId string) time.Time {
 	var movedTime time.Time
 	lastMovedQuery := `
@@ -160,4 +185,27 @@ func DeleteGatewayLocations(networkId string, gatewayId string) {
 
 func InsertGatewayLocations(locations []GatewayLocation) {
 	Db.Create(&locations)
+}
+
+func GatewayInsertNewLocation(gateway types.TtnMapperGateway, installedAt time.Time) {
+	newLocation := GatewayLocation{
+		NetworkId:   gateway.NetworkId,
+		GatewayId:   gateway.GatewayId,
+		InstalledAt: installedAt,
+		Latitude:    gateway.Latitude,
+		Longitude:   gateway.Longitude,
+		Altitude:    gateway.Altitude,
+	}
+	Db.Create(&newLocation)
+}
+
+// TODO cache this in memory for a certain period of time
+func GatewayCoordinatesForced(gateway types.TtnMapperGateway) (bool, GatewayLocationForce) {
+	forcedCoords := GatewayLocationForce{NetworkId: gateway.NetworkId, GatewayId: gateway.GatewayId}
+	Db.First(&forcedCoords, &forcedCoords)
+	if forcedCoords.ID != 0 {
+		return true, forcedCoords
+	} else {
+		return false, forcedCoords
+	}
 }

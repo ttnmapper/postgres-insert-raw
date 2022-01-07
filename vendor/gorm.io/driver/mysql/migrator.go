@@ -229,3 +229,17 @@ func (m Migrator) ColumnTypes(value interface{}) ([]gorm.ColumnType, error) {
 
 	return columnTypes, err
 }
+
+func (m Migrator) CurrentDatabase() (name string) {
+	baseName := m.Migrator.CurrentDatabase()
+	m.DB.Raw(
+		"SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE ? ORDER BY SCHEMA_NAME=? DESC limit 1",
+		baseName+"%", baseName).Scan(&name)
+	return
+}
+
+func (m Migrator) GetTables() (tableList []string, err error) {
+	err = m.DB.Raw("SELECT TABLE_NAME FROM information_schema.tables where TABLE_SCHEMA=?", m.CurrentDatabase()).
+		Scan(&tableList).Error
+	return
+}

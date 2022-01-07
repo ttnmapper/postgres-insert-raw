@@ -1,22 +1,20 @@
 package tests
 
 import (
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	"encoding/json"
+	"github.com/kelseyhightower/envconfig"
 	"log"
-	"os"
 	"testing"
 	"ttnmapper-postgres-insert-raw/pkg/database"
 )
 
 type Configuration struct {
-	PostgresHost     string `env:"POSTGRES_HOST"`
-	PostgresPort     string `env:"POSTGRES_PORT"`
-	PostgresUser     string `env:"POSTGRES_USER"`
-	PostgresPassword string `env:"POSTGRES_PASSWORD"`
-	PostgresDatabase string `env:"POSTGRES_DATABASE"`
-	PostgresDebugLog bool   `env:"POSTGRES_DEBUG_LOG"`
+	PostgresHost     string `envconfig:"POSTGRES_HOST"`
+	PostgresPort     string `envconfig:"POSTGRES_PORT"`
+	PostgresUser     string `envconfig:"POSTGRES_USER"`
+	PostgresPassword string `envconfig:"POSTGRES_PASSWORD"`
+	PostgresDatabase string `envconfig:"POSTGRES_DATABASE"`
+	PostgresDebugLog bool   `envconfig:"POSTGRES_DEBUG_LOG"`
 }
 
 var myConfiguration = Configuration{
@@ -28,38 +26,79 @@ var myConfiguration = Configuration{
 	PostgresDebugLog: true,
 }
 
-func TestMigrateDb(t *testing.T) {
-
-	myConfiguration.PostgresHost = os.Getenv("POSTGRES_HOST")
-	myConfiguration.PostgresPort = os.Getenv("POSTGRES_PORT")
-	myConfiguration.PostgresUser = os.Getenv("POSTGRES_USER")
-	myConfiguration.PostgresPassword = os.Getenv("POSTGRES_PASSWORD")
-	myConfiguration.PostgresDatabase = os.Getenv("POSTGRES_DATABASE")
-
-	log.Printf("[Configuration]\n%v\n", myConfiguration)
-
-	dsn := "host=" + myConfiguration.PostgresHost + " port=" + myConfiguration.PostgresPort + " user=" + myConfiguration.PostgresUser + " dbname=" + myConfiguration.PostgresDatabase + " password=" + myConfiguration.PostgresPassword + " sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
+func initDb() {
+	err := envconfig.Process("", &myConfiguration)
 	if err != nil {
-		panic(err.Error())
+		log.Fatal(err.Error())
 	}
 
+	log.Println("Init database")
+	databaseContext := database.Context{
+		Host:     myConfiguration.PostgresHost,
+		Port:     myConfiguration.PostgresPort,
+		User:     myConfiguration.PostgresUser,
+		Database: myConfiguration.PostgresDatabase,
+		Password: myConfiguration.PostgresPassword,
+		DebugLog: myConfiguration.PostgresDebugLog,
+	}
+	databaseContext.Init()
+}
+
+func TestMigrateDb(t *testing.T) {
+
+	initDb()
+
 	log.Println("Performing auto migrate")
-	if err := db.AutoMigrate(
-		&database.Device{},
-		&database.Frequency{},
-		&database.DataRate{},
-		&database.CodingRate{},
-		&database.AccuracySource{},
-		&database.Experiment{},
-		&database.User{},
-		&database.UserAgent{},
-		&database.Antenna{},
-		&database.FineTimestampKeyID{},
-		&database.Packet{},
+	if err := database.Db.AutoMigrate(
+		//&database.Device{},
+		//&database.Frequency{},
+		//&database.DataRate{},
+		//&database.CodingRate{},
+		//&database.AccuracySource{},
+		//&database.Experiment{},
+		//&database.User{},
+		//&database.UserAgent{},
+		//&database.Antenna{},
+		//&database.FineTimestampKeyID{},
+		//&database.Packet{},
+		&database.Gateway{},
+		//&database.TestTable{},
 	); err != nil {
 		log.Println("Unable autoMigrateDB - ", err.Error())
+	}
+}
+
+func TestInsertTestTable(t *testing.T) {
+	initDb()
+
+	attributes := make(map[string]interface{}, 0)
+	attributes["name"] = "test entry"
+
+	marshalled, err := json.Marshal(attributes)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	testEntry := database.TestTable{
+		ID:         0,
+		Attributes: marshalled,
+	}
+
+	database.Db.Create(&testEntry).Commit()
+}
+
+func TestSelectTestTable(t *testing.T) {
+	initDb()
+
+	var testEntries []database.TestTable
+	database.Db.Find(&testEntries)
+
+	for _, entry := range testEntries {
+		attributes := map[string]interface{}{}
+		err := json.Unmarshal(entry.Attributes, &attributes)
+		if err != nil {
+			log.Println(err.Error())
+		}
+		log.Println(attributes["name"])
 	}
 }

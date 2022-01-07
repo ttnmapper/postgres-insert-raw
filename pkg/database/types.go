@@ -1,6 +1,7 @@
 package database
 
 import (
+	"gorm.io/datatypes"
 	"time"
 )
 
@@ -122,10 +123,10 @@ type Antenna struct {
 type Gateway struct {
 	ID uint
 
-	NetworkId   string `gorm:"type:text;UNIQUE_INDEX:idx_gtw_id"`
-	GatewayId   string `gorm:"type:text;UNIQUE_INDEX:idx_gtw_id"`
-	GatewayEui  *string
-	Description *string
+	NetworkId  string `gorm:"type:text;UNIQUE_INDEX:idx_gtw_id"`
+	GatewayId  string `gorm:"type:text;UNIQUE_INDEX:idx_gtw_id"`
+	GatewayEui *string
+	Name       *string
 
 	Latitude         float64
 	Longitude        float64
@@ -138,6 +139,13 @@ type Gateway struct {
 
 	//Antennas         []Antenna
 	//GatewayLocations []GatewayLocation
+
+	Attributes datatypes.JSON // general info like frequency plan, description, etc
+}
+
+type TestTable struct {
+	ID         uint
+	Attributes datatypes.JSON
 }
 
 type GatewayLocation struct {
@@ -165,6 +173,12 @@ type GatewayLocationForce struct {
 type FineTimestampKeyID struct {
 	ID                          uint
 	FineTimestampEncryptedKeyId string
+}
+
+type TtsV3FetchStatus struct {
+	ID       uint
+	TenantId string
+	ApiKey   string
 }
 
 // Indexers: These structs are the same as the ones above, but used to index the cache maps
