@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 	"ttnmapper-postgres-insert-raw/cmd/website-api/responses"
 	"ttnmapper-postgres-insert-raw/pkg/database"
@@ -68,9 +69,26 @@ func GetGatewayData(writer http.ResponseWriter, request *http.Request) {
 		responses.RenderError(writer, request, errors.New("gateway_id not set"))
 		return
 	}
+	gatewayId, err = url.QueryUnescape(gatewayId)
+	if err != nil {
+		responses.RenderError(writer, request, err)
+		return
+	}
+	gatewayId = strings.Trim(gatewayId, " ") // ignore spaces before and after
+	//gatewayId = strings.Replace(gatewayId, " ", "-", -1) // helium add dashes between three words - do this in JS to keep api generic
+
 	networkId := request.URL.Query().Get("network_id")
+	networkId, err = url.QueryUnescape(networkId)
+	if err != nil {
+		responses.RenderError(writer, request, err)
+		return
+	}
 
 	startTimeString := request.URL.Query().Get("start_time")
+	if err != nil {
+		responses.RenderError(writer, request, err)
+		return
+	}
 	startTime := time.Time{}
 	if startTimeString != "" {
 		// parse rfc-3339 datetime
@@ -82,6 +100,11 @@ func GetGatewayData(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	endTimeString := request.URL.Query().Get("end_time")
+	endTimeString, err = url.QueryUnescape(endTimeString)
+	if err != nil {
+		responses.RenderError(writer, request, err)
+		return
+	}
 	endTime := time.Now()
 	if endTimeString != "" {
 		// parse rfc-3339 datetime
@@ -92,21 +115,28 @@ func GetGatewayData(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 
-	gatewayDataDbRows, err := database.GetPacketsForGateway(networkId, gatewayId, startTime, endTime, 10000)
-	if err != nil {
-		responses.RenderError(writer, request, err)
-		return
-	}
+	// Find all gateways with this name or ID
+	gateways := database.GetGatewaysByNameOrId(gatewayId)
 
+	// Where all results will be stored
 	result := make([]responses.DeviceMeasurement, 0)
-	for gatewayDataDbRows.Next() {
-		measurement := responses.DeviceMeasurement{}
-		err = database.Db.ScanRows(gatewayDataDbRows, &measurement)
+
+	for _, gateway := range gateways {
+		gatewayDataDbRows, err := database.GetPacketsForGateway(networkId, gateway.GatewayId, startTime, endTime, 10000)
 		if err != nil {
 			responses.RenderError(writer, request, err)
-			break
+			return
 		}
-		result = append(result, measurement)
+
+		for gatewayDataDbRows.Next() {
+			measurement := responses.DeviceMeasurement{}
+			err = database.Db.ScanRows(gatewayDataDbRows, &measurement)
+			if err != nil {
+				responses.RenderError(writer, request, err)
+				break
+			}
+			result = append(result, measurement)
+		}
 	}
 
 	render.JSON(writer, request, result)

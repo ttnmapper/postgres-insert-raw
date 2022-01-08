@@ -6,6 +6,7 @@ import (
 	"log"
 	"testing"
 	"ttnmapper-postgres-insert-raw/pkg/database"
+	"ttnmapper-postgres-insert-raw/pkg/utils"
 )
 
 type Configuration struct {
@@ -101,4 +102,12 @@ func TestSelectTestTable(t *testing.T) {
 		}
 		log.Println(attributes["name"])
 	}
+}
+
+func TestGetGatewaysByNameOrId(t *testing.T) {
+	initDb()
+
+	gateways := database.GetGatewaysByNameOrId("nice-silver-shell")
+
+	log.Println(utils.PrettyPrint(gateways))
 }

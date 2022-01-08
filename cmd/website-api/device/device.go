@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/render"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 	"ttnmapper-postgres-insert-raw/cmd/website-api/responses"
 	"ttnmapper-postgres-insert-raw/pkg/database"
@@ -27,12 +28,32 @@ func GetDeviceData(writer http.ResponseWriter, request *http.Request) {
 		responses.RenderError(writer, request, errors.New("dev_id not set"))
 		return
 	}
+	deviceId, err = url.QueryUnescape(deviceId)
+	if err != nil {
+		responses.RenderError(writer, request, err)
+		return
+	}
 
 	applicationId := request.URL.Query().Get("app_id")
+	applicationId, err = url.QueryUnescape(applicationId)
+	if err != nil {
+		responses.RenderError(writer, request, err)
+		return
+	}
 	networkId := request.URL.Query().Get("network_id")
+	networkId, err = url.QueryUnescape(networkId)
+	if err != nil {
+		responses.RenderError(writer, request, err)
+		return
+	}
 	log.Println("network_id", networkId)
 
 	startTimeString := request.URL.Query().Get("start_time")
+	startTimeString, err = url.QueryUnescape(startTimeString)
+	if err != nil {
+		responses.RenderError(writer, request, err)
+		return
+	}
 	startTime := time.Time{}
 	if startTimeString != "" {
 		// parse rfc-3339 datetime
@@ -44,6 +65,11 @@ func GetDeviceData(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	endTimeString := request.URL.Query().Get("end_time")
+	endTimeString, err = url.QueryUnescape(endTimeString)
+	if err != nil {
+		responses.RenderError(writer, request, err)
+		return
+	}
 	endTime := time.Now()
 	if endTimeString != "" {
 		// parse rfc-3339 datetime

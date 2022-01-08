@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/patrickmn/go-cache"
+	"log"
 	"strings"
 	"time"
 	"ttnmapper-postgres-insert-raw/pkg/types"
@@ -48,6 +49,25 @@ func GetGatewaysWithId(gatewayId string) []Gateway {
 	var gateways []Gateway
 	Db.Where("gateway_id = ?", gatewayId).Find(&gateways)
 	return gateways
+}
+
+func GetGatewaysByNameOrId(gatewaySearch string) []Gateway {
+	query := `
+	SELECT * FROM gateways
+	WHERE gateway_id = ?
+	OR name = ?`
+
+	rows, err := Db.Raw(query, gatewaySearch, gatewaySearch).Rows()
+	result := make([]Gateway, 0)
+	for rows.Next() {
+		measurement := Gateway{}
+		err = Db.ScanRows(rows, &measurement)
+		if err != nil {
+			log.Println(err.Error())
+		}
+		result = append(result, measurement)
+	}
+	return result
 }
 
 func GetOnlineGatewaysForNetwork(networkId string) []Gateway {
