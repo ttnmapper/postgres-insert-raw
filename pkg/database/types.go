@@ -39,7 +39,7 @@ type Packet struct {
 	Hdop             *float64 `gorm:"type:numeric(4,1)"`
 	AccuracySourceID uint
 
-	ExperimentID *uint `gorm:"index:idx_packets_device_id_time_experiment_id,priority:2,index:idx_packets_antenna_id_latitude_experiment_id,priority:3;index:idx_packets_antenna_id_longitude_experiment_id,priority:3;index:idx_packets_experiment_id_time,where:experiment_id is not null,priority:1"`
+	ExperimentID *uint `gorm:"index:idx_packets_device_id_time_experiment_id,priority:2;index:idx_packets_antenna_id_latitude_experiment_id,priority:3;index:idx_packets_antenna_id_longitude_experiment_id,priority:3;index:idx_packets_experiment_id_time,where:experiment_id is not null,priority:1"`
 
 	UserID      uint
 	UserAgentID uint
@@ -123,10 +123,10 @@ type Antenna struct {
 type Gateway struct {
 	ID uint
 
-	NetworkId  string `gorm:"type:text;UNIQUE_INDEX:idx_gtw_id"`
+	NetworkId  string `gorm:"type:text;UNIQUE_INDEX:idx_gtw_id;INDEX:idx_gtw_network_name,priority:1"`
 	GatewayId  string `gorm:"type:text;UNIQUE_INDEX:idx_gtw_id"`
 	GatewayEui *string
-	Name       *string
+	Name       *string `gorm:"type:text;INDEX:idx_gtw_network_name,priority:2"`
 
 	Latitude         float64
 	Longitude        float64

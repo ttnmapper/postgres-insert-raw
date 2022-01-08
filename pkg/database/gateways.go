@@ -151,6 +151,14 @@ AND gateway_id = ?`
 	return movedTime
 }
 
+func GetGatewayLastMove(networkId string, gatewayId string) GatewayLocation {
+	var gatewayMove GatewayLocation
+	gatewayMove.NetworkId = networkId
+	gatewayMove.GatewayId = gatewayId
+	Db.Order("installed_at desc").First(&gatewayMove, &gatewayMove)
+	return gatewayMove
+}
+
 func GetAllOldNamingTtnV2Antennas() []Antenna {
 	var antennas []Antenna
 	Db.Where("network_id LIKE 'NS_TTN_V2://%' OR network_id LIKE 'NS_TTS_V3://ttnv2@000013'").Find(&antennas)
@@ -228,4 +236,24 @@ func GatewayCoordinatesForced(gateway types.TtnMapperGateway) (bool, GatewayLoca
 	} else {
 		return false, forcedCoords
 	}
+}
+
+func GetOldMappedHeliumAntennas() []Antenna {
+	var antennas []Antenna // must have an antenna to have been mapped
+	Db.Where("network_id = 'NS_HELIUM://000024' AND gateway_id ~ '^[a-z]*-[a-z]*-[a-z]*$'").Find(&antennas)
+	return antennas
+}
+
+func GetNewHeliumAntennaForOldAntenna(oldAntenna Antenna) Antenna {
+	var gateway Gateway
+	gateway.NetworkId = "NS_HELIUM://000024"
+	gateway.Name = &oldAntenna.GatewayId // three word name moved from id field to name field
+	Db.Find(&gateway, &gateway)
+
+	var antenna Antenna
+	antenna.NetworkId = oldAntenna.NetworkId
+	antenna.GatewayId = gateway.GatewayId
+	antenna.AntennaIndex = oldAntenna.AntennaIndex
+	Db.FirstOrCreate(&antenna, &antenna)
+	return antenna
 }

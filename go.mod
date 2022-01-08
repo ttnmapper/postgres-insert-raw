@@ -19,6 +19,7 @@ require (
 	github.com/kylelemons/go-gypsy v1.0.0 // indirect
 	github.com/labstack/echo/v4 v4.6.1
 	github.com/lib/pq v1.10.4 // indirect
+	github.com/ormembaar/angry-purple-tiger v0.1.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/paulmach/go.geojson v1.4.0
 	github.com/prometheus/client_golang v1.9.0
