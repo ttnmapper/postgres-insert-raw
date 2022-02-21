@@ -29,8 +29,12 @@ require (
 	github.com/tkanos/gonfig v0.0.0-20210106201359-53e13348de2f // indirect
 	github.com/umahmood/haversine v0.0.0-20151105152445-808ab04add26
 	github.com/ziutek/mymysql v1.5.4 // indirect
+	go.packetbroker.org/api/routing v1.8.17
+	go.packetbroker.org/api/v3 v3.12.3 // indirect
+	go.packetbroker.org/pb v0.0.0-20220124200758-fd08c86e9140
+	go.uber.org/zap v1.19.1
 	golang.org/x/crypto v0.0.0-20211202192323-5770296d904e // indirect
-	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
+	google.golang.org/genproto v0.0.0-20211129164237-f09f9a12af12 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gorm.io/datatypes v1.0.5

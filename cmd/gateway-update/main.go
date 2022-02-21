@@ -41,6 +41,9 @@ type Configuration struct {
 	FetchPacketBroker         bool `envconfig:"FETCH_PACKET_BROKER"`
 	FetchPacketBrokerInterval int  `envconfig:"FETCH_PACKET_BROKER_INTERVAL"`
 
+	FetchRouting         bool `envconfig:"FETCH_ROUTING"`
+	FetchRoutingInterval int  `envconfig:"FETCH_ROUTING_INTERVAL"`
+
 	FetchHelium         bool `envconfig:"FETCH_HELIUM"`
 	FetchHeliumInterval int  `envconfig:"FETCH_HELIUM_INTERVAL"`
 
@@ -72,6 +75,8 @@ var myConfiguration = Configuration{
 	FetchWebInterval:          3600,
 	FetchPacketBroker:         false,
 	FetchPacketBrokerInterval: 3600,
+	FetchRouting:              false,
+	FetchRoutingInterval:      86400,
 	FetchHelium:               false,
 	FetchHeliumInterval:       86400,
 	FetchTts:                  false,

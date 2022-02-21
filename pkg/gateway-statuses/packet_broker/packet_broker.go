@@ -3,6 +3,10 @@ package packet_broker
 import (
 	"context"
 	"errors"
+	routingpb "go.packetbroker.org/api/routing"
+	packetbroker "go.packetbroker.org/api/v3"
+	"go.packetbroker.org/pb/pkg/client"
+	"go.uber.org/zap"
 	"log"
 	"strconv"
 	"strings"
@@ -58,6 +62,49 @@ func FetchStatuses(page int) ([]Openapi.Gateway, error) {
 		log.Printf("%s", listGatewaysResponse.Body)
 		return gateways, errors.New("response nil")
 	}
+}
+
+func FetchRoutingPolicies(netId uint32, tenantId string, apiKeyId string, apiKeySecret string) []*packetbroker.RoutingPolicy {
+	cpClientConf := client.Config{
+		Address: "cp.packetbroker.net:443",
+	}
+	cpClientConf.Credentials = client.OAuth2(
+		context.Background(),
+		"https://iam.packetbroker.net/token",
+		apiKeyId,
+		apiKeySecret,
+		"cp.packetbroker.net",
+		[]string{"networks"},
+		false,
+	)
+
+	logger, _ := zap.NewDevelopment()
+	cpConn, err := client.DialContext(context.Background(), logger, &cpClientConf, 443)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	policyManagerClient := routingpb.NewPolicyManagerClient(cpConn)
+
+	var policies []*packetbroker.RoutingPolicy
+	offset := uint32(0)
+	for {
+		res, err := policyManagerClient.ListEffectivePolicies(context.Background(), &routingpb.ListEffectivePoliciesRequest{
+			HomeNetworkNetId:    netId,
+			HomeNetworkTenantId: tenantId,
+			Offset:              offset,
+		})
+		if err != nil {
+			log.Println(err.Error())
+			return policies
+		}
+		policies = append(policies, res.Policies...)
+		offset += uint32(len(res.Policies))
+		if len(res.Policies) == 0 || offset >= res.Total {
+			break
+		}
+	}
+	return policies
 }
 
 func PbGatewayToTtnMapperGateway(gatewayIn Openapi.Gateway) (types.TtnMapperGateway, error) {

@@ -1,10 +1,11 @@
 package types
 
 const (
-	NS_TTN_V2 = "NS_TTN_V2"
-	NS_TTS_V3 = "NS_TTS_V3"
-	NS_CHIRP  = "NS_CHIRP"
-	NS_HELIUM = "NS_HELIUM"
+	NS_TTN_V2  = "NS_TTN_V2"
+	NS_TTS_V3  = "NS_TTS_V3"
+	NS_CHIRP   = "NS_CHIRP"
+	NS_HELIUM  = "NS_HELIUM"
+	NS_UNKNOWN = "NS"
 )
 
 type TtnMapperUplinkMessage struct {

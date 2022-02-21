@@ -47,3 +47,13 @@ func TestFetchHeliumStatuses(t *testing.T) {
 	initTests()
 	fetchHeliumStatuses()
 }
+
+func TestFetchTtsStatuses(t *testing.T) {
+	initTests()
+	fetchTtsStatuses()
+}
+
+func TestFetchPbRoutingPolicies(t *testing.T) {
+	//initTests()
+	FetchPbRoutingPolicies()
+}

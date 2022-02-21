@@ -181,6 +181,43 @@ type TtsV3FetchStatus struct {
 	ApiKey   string
 }
 
+type PacketBrokerRoutingPolicy struct {
+	/*
+		{
+			"forwarder_tenant_id": "cropwatch",
+			"home_network_net_id": 19,
+			"home_network_tenant_id": "ttn",
+			"updated_at": {
+				"seconds": 1622040895,
+				"nanos": 189412000
+			},
+			"uplink": {
+				"join_request": true,
+				"mac_data": true,
+				"application_data": true,
+				"signal_quality": true,
+				"localization": true
+			},
+			"downlink": {
+				"join_accept": true,
+				"mac_data": true,
+				"application_data": true
+			}
+		},
+	*/
+	ID                      uint
+	HomeNetworkId           string `gorm:"type:text;UNIQUE_INDEX:idx_pb_route"`
+	ForwarderNetworkId      string `gorm:"type:text;UNIQUE_INDEX:idx_pb_route"`
+	UplinkJoinRequest       bool
+	UplinkMacData           bool
+	UplinkApplicationData   bool
+	UplinkSignalQuality     bool
+	UplinkLocalization      bool
+	DownlinkJoinAccept      bool
+	DownlinkMacData         bool
+	DownlinkApplicationData bool
+}
+
 // Indexers: These structs are the same as the ones above, but used to index the cache maps
 type DeviceIndexer struct {
 	NetworkId string

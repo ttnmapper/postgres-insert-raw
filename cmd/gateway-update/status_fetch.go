@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/streadway/amqp"
 	"log"
+	"os"
 	"time"
 	"ttnmapper-postgres-insert-raw/pkg/database"
 	"ttnmapper-postgres-insert-raw/pkg/gateway-statuses/helium"
@@ -105,6 +106,7 @@ func startPeriodicFetchers() {
 	pbTicker := time.NewTicker(time.Duration(myConfiguration.FetchPacketBrokerInterval) * time.Second)
 	heliumTicker := time.NewTicker(time.Duration(myConfiguration.FetchHeliumInterval) * time.Second)
 	ttsTicker := time.NewTicker(time.Duration(myConfiguration.FetchTtsInterval) * time.Second)
+	pbRoutingTicker := time.NewTicker(time.Duration(myConfiguration.FetchRoutingInterval) * time.Second)
 
 	go func() {
 		for {
@@ -128,6 +130,10 @@ func startPeriodicFetchers() {
 			case <-ttsTicker.C:
 				if myConfiguration.FetchTts {
 					go fetchTtsStatuses()
+				}
+			case <-pbRoutingTicker.C:
+				if myConfiguration.FetchRouting {
+					go FetchPbRoutingPolicies()
 				}
 			}
 		}
@@ -269,6 +275,8 @@ func fetchHeliumStatuses() {
 	busyFetchingHelium = false
 }
 
+// Fetch statuses from private TTS instances
+
 var busyFetchingTtsNetworkStatuses = false
 
 func fetchTtsStatuses() {
@@ -306,4 +314,34 @@ func fetchTtsStatuses() {
 	log.Printf("Fetched %d gateways from TTS", gatewayCount)
 
 	busyFetchingTtsNetworkStatuses = false
+}
+
+// Fetch routing policies from Packet Broker
+
+var busyFetchingRouting = false
+
+func FetchPbRoutingPolicies() {
+	if busyFetchingRouting {
+		return
+	}
+	busyFetchingRouting = true
+
+	var netId uint32 = 0x000013
+	tenantId := "ttn"
+	policies := packet_broker.FetchRoutingPolicies(netId, tenantId, os.Getenv("PB_API_KEY_ID"), os.Getenv("PB_API_KEY_SECRET"))
+
+	//log.Println(utils.PrettyPrint(policies))
+	for _, policy := range policies {
+		// The results include wildcard policies. Replace empty wildcard fields with known network values.
+		policy.HomeNetworkNetId = netId
+		policy.HomeNetworkTenantId = tenantId
+
+		dbPolicy := database.PacketBrokerRoutingPolicy{}
+		packet_broker.RoutingPolicyToDbPolicy(policy, &dbPolicy)
+
+		//log.Println(dbPolicy.HomeNetworkId, " - ", dbPolicy.ForwarderNetworkId)
+		database.InsertOrUpdateRoutingPolicy(dbPolicy)
+	}
+
+	busyFetchingRouting = false
 }

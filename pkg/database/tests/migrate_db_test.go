@@ -62,8 +62,9 @@ func TestMigrateDb(t *testing.T) {
 		//&database.Antenna{},
 		//&database.FineTimestampKeyID{},
 		//&database.Packet{},
-		&database.Gateway{},
+		//&database.Gateway{},
 		//&database.TestTable{},
+		&database.PacketBrokerRoutingPolicy{},
 	); err != nil {
 		log.Println("Unable autoMigrateDB - ", err.Error())
 	}

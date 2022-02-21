@@ -2,7 +2,9 @@ package packet_broker
 
 import (
 	"log"
+	"os"
 	"testing"
+	"ttnmapper-postgres-insert-raw/pkg/database"
 )
 
 func TestFetchStatusesPage(t *testing.T) {
@@ -34,5 +36,24 @@ func TestFetchStatusesAll(t *testing.T) {
 			log.Printf("Fetched %d statuses for page %d", len(gateways), page)
 		}
 		page++
+	}
+}
+
+func TestFetchRoutingPolicies(t *testing.T) {
+	var netId uint32 = 0x000013
+	tenantId := "ttn"
+	policies := FetchRoutingPolicies(netId, tenantId, os.Getenv("PB_API_KEY_ID"), os.Getenv("PB_API_KEY_SECRET"))
+
+	//log.Println(utils.PrettyPrint(policies))
+	for _, policy := range policies {
+		// The results include wildcard policies. Replace empty wildcard fields with known network values.
+		policy.HomeNetworkNetId = netId
+		policy.HomeNetworkTenantId = tenantId
+
+		dbPolicy := database.PacketBrokerRoutingPolicy{}
+		RoutingPolicyToDbPolicy(policy, &dbPolicy)
+
+		log.Println(dbPolicy.HomeNetworkId, " - ", dbPolicy.ForwarderNetworkId)
+		//InsertOrUpdateRoutingPolicy(policy)
 	}
 }
