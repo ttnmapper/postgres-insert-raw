@@ -113,3 +113,10 @@ func TestGetGatewaysByNameOrId(t *testing.T) {
 
 	log.Println(utils.PrettyPrint(gateways))
 }
+
+func TestGetPeeredNetworks(t *testing.T) {
+	initDb()
+
+	peeredNetworks := database.GetPeeredNetworks("NS_TTS_V3://ttn@000013")
+	log.Println(utils.PrettyPrint(peeredNetworks))
+}

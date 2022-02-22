@@ -41,8 +41,16 @@ func GetGateways(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	dbGateways := database.GetOnlineGatewaysForNetwork(networkId)
-	responseGateways := responses.DbGatewaysToResponse(dbGateways)
+	// Include all gateways from networks that feed data into this network via the packet broker
+	peeredNetworks := database.GetPeeredNetworks(networkId)
+
+	responseGateways := make([]responses.Gateway, 0)
+
+	for _, network := range peeredNetworks {
+		dbGateways := database.GetOnlineGatewaysForNetwork(network.ForwarderNetworkId)
+		responseGateways = append(responseGateways, responses.DbGatewaysToResponse(dbGateways)...)
+	}
+
 	render.JSON(writer, request, responseGateways)
 
 	//for _, gateway := range responseGateways {
