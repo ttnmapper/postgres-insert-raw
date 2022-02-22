@@ -64,7 +64,8 @@ func TestMigrateDb(t *testing.T) {
 		//&database.Packet{},
 		//&database.Gateway{},
 		//&database.TestTable{},
-		&database.PacketBrokerRoutingPolicy{},
+		//&database.PacketBrokerRoutingPolicy{},
+		&database.GatewayBoundingBox{},
 	); err != nil {
 		log.Println("Unable autoMigrateDB - ", err.Error())
 	}

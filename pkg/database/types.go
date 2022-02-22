@@ -218,6 +218,16 @@ type PacketBrokerRoutingPolicy struct {
 	DownlinkApplicationData bool
 }
 
+type GatewayBoundingBox struct {
+	ID        uint
+	NetworkId string  `gorm:"type:text;UNIQUE_INDEX:idx_bbox_gtw_id"`
+	GatewayId string  `gorm:"type:text;UNIQUE_INDEX:idx_bbox_gtw_id"`
+	North     float64 `gorm:"not null;index:idx_coords_bbox"`
+	South     float64 `gorm:"not null;index:idx_coords_bbox"`
+	East      float64 `gorm:"not null;index:idx_coords_bbox"`
+	West      float64 `gorm:"not null;index:idx_coords_bbox"`
+}
+
 // Indexers: These structs are the same as the ones above, but used to index the cache maps
 type DeviceIndexer struct {
 	NetworkId string
