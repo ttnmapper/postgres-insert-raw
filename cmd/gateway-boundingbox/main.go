@@ -137,6 +137,8 @@ func ReprocessSingleGateway(gateway database.Gateway) {
 	log.Println("Antenna IDs: ", antennaIds)
 
 	var result database.GatewayBoundingBox
+	result.NetworkId = gateway.NetworkId
+	result.GatewayId = gateway.GatewayId
 
 	if len(antennaIds) > 0 {
 		database.Db.Raw(`
@@ -180,9 +182,6 @@ func ReprocessSingleGateway(gateway database.Gateway) {
 
 		log.Println(utils.PrettyPrint(result))
 	}
-
-	result.NetworkId = gateway.NetworkId
-	result.GatewayId = gateway.GatewayId
 
 	if result.North == 0 && result.South == 0 && result.East == 0 && result.West == 0 {
 		log.Println("Bounds zero, not updating")
