@@ -52,6 +52,11 @@ func UpdateGateway(gateway types.TtnMapperGateway) {
 	nanos := gateway.Time % 1000000000
 	lastHeard := time.Unix(seconds, nanos)
 
+	// A gateway's last heard can not be in the future
+	if lastHeard.After(time.Now()) {
+		lastHeard = time.Now()
+	}
+
 	// Find the database IDs for this gateway and it's antennas
 	gatewayDb, err := database.GetOrCreateGateway(database.GatewayIndexer{
 		NetworkId: gateway.NetworkId,

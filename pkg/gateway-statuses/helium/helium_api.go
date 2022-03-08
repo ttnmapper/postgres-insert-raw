@@ -85,6 +85,16 @@ func HeliumHotspotToTtnMapperGateway(hotspot Hotspot) (types.TtnMapperGateway, e
 		LocationSource:   "",
 	}
 
+	// Last heard times can not be in the future. In that case use now.
+	if hotspot.Status.Timestamp.After(time.Now()) {
+		gateway.Time = time.Now().UnixNano()
+	}
+
+	// Only accept last heard times for online gateways
+	if hotspot.Status.Online != "online" {
+		gateway.Time = 0
+	}
+
 	gateway.Attributes = make(map[string]interface{}, 0)
 	gateway.Attributes["mode"] = hotspot.Mode
 	gateway.Attributes["timestamp_added"] = hotspot.TimestampAdded.UnixNano()

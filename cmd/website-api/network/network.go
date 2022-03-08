@@ -46,8 +46,18 @@ func GetGateways(writer http.ResponseWriter, request *http.Request) {
 
 	responseGateways := make([]responses.Gateway, 0)
 
+	selfInPeeredNetworks := false
 	for _, network := range peeredNetworks {
+		if network.ForwarderNetworkId == networkId {
+			selfInPeeredNetworks = true
+		}
 		dbGateways := database.GetOnlineGatewaysForNetwork(network.ForwarderNetworkId)
+		responseGateways = append(responseGateways, responses.DbGatewaysToResponse(dbGateways)...)
+	}
+
+	// If not routing policies exist for this network, no gateways will be returned. So fetch for this specific network then.
+	if !selfInPeeredNetworks {
+		dbGateways := database.GetOnlineGatewaysForNetwork(networkId)
 		responseGateways = append(responseGateways, responses.DbGatewaysToResponse(dbGateways)...)
 	}
 
