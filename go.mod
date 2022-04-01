@@ -5,15 +5,14 @@ go 1.14
 require (
 	github.com/auth0/go-jwt-middleware v1.0.1
 	github.com/deepmap/oapi-codegen v1.9.0
+	github.com/erikstmartin/go-testdb v0.0.0-20160219214506-8d10e4a1bae5 // indirect
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
 	github.com/getkin/kin-openapi v0.87.0
 	github.com/go-chi/chi v1.5.4
 	github.com/go-chi/cors v1.2.0
 	github.com/go-chi/render v1.0.1
 	github.com/j4/gosm v0.0.0-20141123101329-8f3e37d8629e
-	github.com/jackc/pgx/v4 v4.14.1 // indirect
-	github.com/jinzhu/gorm v1.9.16 // indirect
-	github.com/jinzhu/now v1.1.4 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/kellydunn/golang-geo v0.7.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kylelemons/go-gypsy v1.0.0 // indirect
@@ -26,19 +25,15 @@ require (
 	github.com/prometheus/common v0.18.0 // indirect
 	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/streadway/amqp v1.0.0
-	github.com/tkanos/gonfig v0.0.0-20210106201359-53e13348de2f // indirect
 	github.com/umahmood/haversine v0.0.0-20151105152445-808ab04add26
 	github.com/ziutek/mymysql v1.5.4 // indirect
 	go.packetbroker.org/api/routing v1.8.17
-	go.packetbroker.org/api/v3 v3.12.3 // indirect
+	go.packetbroker.org/api/v3 v3.12.3
 	go.packetbroker.org/pb v0.0.0-20220124200758-fd08c86e9140
 	go.uber.org/zap v1.19.1
-	golang.org/x/crypto v0.0.0-20211202192323-5770296d904e // indirect
-	google.golang.org/genproto v0.0.0-20211129164237-f09f9a12af12 // indirect
-	google.golang.org/protobuf v1.27.1 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gorm.io/datatypes v1.0.5
-	gorm.io/driver/mysql v1.2.2
-	gorm.io/driver/postgres v1.2.3
-	gorm.io/gorm v1.22.4
+	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29 // indirect
+	gorm.io/datatypes v1.0.6
+	gorm.io/driver/mysql v1.3.2
+	gorm.io/driver/postgres v1.3.1
+	gorm.io/gorm v1.23.3
 )

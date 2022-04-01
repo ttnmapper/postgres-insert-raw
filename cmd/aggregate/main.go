@@ -57,6 +57,7 @@ func main() {
 
 	reprocess := flag.Bool("reprocess", false, "Reprocess all or specific gateways")
 	offset := flag.Int("offset", 0, "Skip this number of gateways when reprocessing all")
+	//aggregationType := flag.String("type", "", "Which type of aggregation to reprocess: radar, gridcell. Defaults to all.")
 	flag.Parse()
 	reprocessGateways := flag.Args()
 

@@ -54,7 +54,6 @@ func AggregateNewData(message types.TtnMapperUplinkMessage) {
 		}
 		incrementRadarBeam(&radarBeam, entryTime, distance)
 		storeRadarBeamInCache(radarBeam)
-		//storeRadarBeamInDb(gridCell)
 		database.SaveRadarBeam(radarBeam)
 	}
 }
@@ -84,7 +83,7 @@ func ReprocessAntenna(antenna database.Antenna, installedAtLocation time.Time) {
 		return
 	}
 
-	// Get a list of grid cells to delete
+	// Get a list of beams to delete
 	radarBeams := database.GetRadarBeamsForAntenna(antenna)
 
 	// Remove from local cache
