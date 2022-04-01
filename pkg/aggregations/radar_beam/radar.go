@@ -150,7 +150,7 @@ func ReprocessAntenna(antenna database.Antenna, installedAtLocation time.Time) {
 	fmt.Println()
 
 	// Then add new ones
-	log.Printf("Result is %d grid cells", len(gatewayRadarBeams))
+	log.Printf("Result is %d radar beams", len(gatewayRadarBeams))
 	err = storeRadarBeamsInDb(gatewayRadarBeams)
 	if err != nil {
 		log.Fatalf(err.Error())
