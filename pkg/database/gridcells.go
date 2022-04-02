@@ -2,12 +2,6 @@ package database
 
 import "gorm.io/gorm/clause"
 
-func GetGridcellsForAntenna(antenna Antenna) []GridCell {
-	var gridCells []GridCell
-	Db.Where("antenna_id = ?", antenna.ID).Find(&gridCells)
-	return gridCells
-}
-
 func GetGridCell(indexer GridCellIndexer) (GridCell, error) {
 	var gridCell GridCell
 	gridCell.AntennaID = indexer.AntennaID
@@ -19,6 +13,12 @@ func GetGridCell(indexer GridCellIndexer) (GridCell, error) {
 
 func SaveGridCell(gridCell GridCell) {
 	Db.Save(&gridCell)
+}
+
+func GetGridcellsForAntenna(antenna Antenna) []GridCell {
+	var gridCells []GridCell
+	Db.Where("antenna_id = ?", antenna.ID).Find(&gridCells)
+	return gridCells
 }
 
 func CreateGridCells(gridCells []GridCell) error {

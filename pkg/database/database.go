@@ -60,7 +60,8 @@ func (databaseContext *Context) Init() {
 	log.Println(dsn)
 	var err error
 	Db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(gormLogLevel),
+		Logger:          logger.Default.LogMode(gormLogLevel),
+		CreateBatchSize: 1000,
 	})
 	if err != nil {
 		panic(err.Error())
