@@ -45,6 +45,12 @@ func GetAllGateways() []Gateway {
 	return gateways
 }
 
+func GetAllGatewaysForNetwork(networkId string) []Gateway {
+	var gateways []Gateway
+	Db.Where("network_id = ?", networkId).Order("id asc").Find(&gateways)
+	return gateways
+}
+
 func GetGatewaysWithId(gatewayId string) []Gateway {
 	var gateways []Gateway
 	Db.Where("gateway_id = ?", gatewayId).Find(&gateways)

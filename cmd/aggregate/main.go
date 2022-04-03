@@ -58,6 +58,7 @@ func main() {
 	reprocess := flag.Bool("reprocess", false, "Reprocess all or specific gateways")
 	offset := flag.Int("offset", 0, "Skip this number of gateways when reprocessing all")
 	//aggregationType := flag.String("type", "", "Which type of aggregation to reprocess: radar, gridcell. Defaults to all.")
+	network := flag.String("network", "", "When specified reprocess only gateways for this network")
 	flag.Parse()
 	reprocessGateways := flag.Args()
 
@@ -94,7 +95,7 @@ func main() {
 		if len(reprocessGateways) > 0 {
 			ReprocessGateways(reprocessGateways)
 		} else {
-			ReprocessAll(*offset)
+			ReprocessAll(*network, *offset)
 		}
 
 	} else {
@@ -113,10 +114,16 @@ func main() {
 	}
 }
 
-func ReprocessAll(offset int) {
-	log.Println("All gateways")
+func ReprocessAll(network string, offset int) {
 
-	gateways := database.GetAllGateways()
+	var gateways []database.Gateway
+	if network != "" {
+		log.Println("All gateways for network", network)
+		gateways = database.GetAllGatewaysForNetwork(network)
+	} else {
+		log.Println("All gateways")
+		gateways = database.GetAllGateways()
+	}
 
 	for i, gateway := range gateways {
 		// Use offset to skip a certain number of gateways
