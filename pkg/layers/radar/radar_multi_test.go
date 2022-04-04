@@ -45,6 +45,6 @@ func Init() {
 
 func TestGenerateRadar(t *testing.T) {
 	Init()
-	GenerateRadar("NS_TTS_V3://ttn@000013", "eui-60c5a8fffe71a964")
+	GenerateRadarMulti("NS_TTS_V3://ttn@000013", "eui-60c5a8fffe71a964")
 
 }

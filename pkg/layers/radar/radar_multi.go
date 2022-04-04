@@ -9,7 +9,7 @@ import (
 	"ttnmapper-postgres-insert-raw/pkg/database"
 )
 
-func GenerateRadar(networkId string, gatewayId string) []byte {
+func GenerateRadarMulti(networkId string, gatewayId string) []byte {
 	gatewayBeams := make(map[int]map[uint]database.RadarBeam, 0)
 
 	gateway, _ := database.GetGateway(database.GatewayIndexer{
@@ -25,17 +25,17 @@ func GenerateRadar(networkId string, gatewayId string) []byte {
 	antennas := database.GetAntennaForGateway(networkId, gatewayId)
 	for _, antenna := range antennas {
 		beams := database.GetRadarBeamsForAntenna(antenna)
-		AddBeamsToGateway(gatewayBeams, beams)
+		AddBeamsToGatewayMulti(gatewayBeams, beams)
 	}
 	//log.Println(gatewayBeams)
 
-	FillZeros(gatewayBeams)
+	FillZerosMulti(gatewayBeams)
 	//log.Println(utils.PrettyPrint(gatewayBeams))
-	geoJsonString := CreateGeoJson(gatewayLocation, gatewayBeams)
+	geoJsonString := CreateGeoJsonMulti(gatewayLocation, gatewayBeams)
 	return geoJsonString
 }
 
-func AddBeamsToGateway(gatewayBeams map[int]map[uint]database.RadarBeam, newBeams []database.RadarBeam) {
+func AddBeamsToGatewayMulti(gatewayBeams map[int]map[uint]database.RadarBeam, newBeams []database.RadarBeam) {
 	for _, newBeam := range newBeams {
 
 		if _, ok := gatewayBeams[newBeam.Level]; ok {
@@ -64,7 +64,7 @@ func MergeBeams(oldBeam database.RadarBeam, newBeam database.RadarBeam) database
 	return oldBeam
 }
 
-func FillZeros(gatewayBeams map[int]map[uint]database.RadarBeam) {
+func FillZerosMulti(gatewayBeams map[int]map[uint]database.RadarBeam) {
 
 	// Fill levels
 	for _, level := range radar_beam.Levels {
@@ -99,7 +99,7 @@ func FillZeros(gatewayBeams map[int]map[uint]database.RadarBeam) {
 	}
 }
 
-func CreateGeoJson(gatewayLocation *geo.Point, gatewayBeams map[int]map[uint]database.RadarBeam) []byte {
+func CreateGeoJsonMulti(gatewayLocation *geo.Point, gatewayBeams map[int]map[uint]database.RadarBeam) []byte {
 
 	fc := geojson.NewFeatureCollection()
 

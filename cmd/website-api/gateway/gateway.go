@@ -18,7 +18,8 @@ func Routes() *chi.Mux {
 
 	router.Get("/{network_id}/{gateway_id}/details", GetGatewayDetails)
 	router.Get("/data", GetGatewayData)
-	router.Get("/{network_id}/{gateway_id}/radar", GetGatewayRadar)
+	router.Get("/{network_id}/{gateway_id}/radar/multi", GetGatewayRadarMulti)
+	router.Get("/{network_id}/{gateway_id}/radar/single", GetGatewayRadarSingle)
 
 	return router
 }
