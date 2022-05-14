@@ -25,6 +25,7 @@ func Routes() *chi.Mux {
 	router.Get("/{network_id}/gateways", GetGateways)
 	router.Get("/{network_id}/gateways/{page}", GetGatewaysPaged)
 	router.Get("/{network_id}/gateways/z5tile/{x}/{y}", GetGatewaysInZ5Tile)
+	router.Get("/{network_id}/gateways/bbox/{north}/{south}/{west}/{east}", GetGatewaysInBBox)
 
 	networkZ5GatewaysCache = cache.New(4*time.Hour, 1*time.Hour)
 
@@ -143,4 +144,42 @@ func GetGatewaysInZ5Tile(writer http.ResponseWriter, request *http.Request) {
 	networkZ5GatewaysCache.Set(cacheIndex, responseGateways, cache.DefaultExpiration)
 
 	render.JSON(writer, request, responseGateways)
+}
+
+func GetGatewaysInBBox(writer http.ResponseWriter, request *http.Request) {
+	var err error
+
+	networkId := chi.URLParam(request, "network_id")
+	networkId, err = url.PathUnescape(networkId)
+	if err != nil {
+		responses.RenderError(writer, request, err)
+		return
+	}
+
+	north, err := strconv.ParseFloat(chi.URLParam(request, "north"), 64)
+	if err != nil {
+		responses.RenderError(writer, request, err)
+		return
+	}
+	south, err := strconv.ParseFloat(chi.URLParam(request, "south"), 64)
+	if err != nil {
+		responses.RenderError(writer, request, err)
+		return
+	}
+	west, err := strconv.ParseFloat(chi.URLParam(request, "west"), 64)
+	if err != nil {
+		responses.RenderError(writer, request, err)
+		return
+	}
+	east, err := strconv.ParseFloat(chi.URLParam(request, "east"), 64)
+	if err != nil {
+		responses.RenderError(writer, request, err)
+		return
+	}
+
+	dbGateways := database.GetOnlineGatewaysForNetworkInBbox(networkId, west, east, north, south)
+	responseGateways := responses.DbGatewaysToResponse(dbGateways)
+
+	render.JSON(writer, request, responseGateways)
+
 }
