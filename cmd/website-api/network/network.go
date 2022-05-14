@@ -177,8 +177,25 @@ func GetGatewaysInBBox(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	dbGateways := database.GetOnlineGatewaysForNetworkInBbox(networkId, west, east, north, south)
-	responseGateways := responses.DbGatewaysToResponse(dbGateways)
+	// Include all gateways from networks that feed data into this network via the packet broker
+	peeredNetworks := database.GetPeeredNetworks(networkId)
+
+	responseGateways := make([]responses.Gateway, 0)
+
+	selfInPeeredNetworks := false
+	for _, network := range peeredNetworks {
+		if network.ForwarderNetworkId == networkId {
+			selfInPeeredNetworks = true
+		}
+		dbGateways := database.GetOnlineGatewaysForNetworkInBbox(networkId, west, east, north, south)
+		responseGateways = append(responseGateways, responses.DbGatewaysToResponse(dbGateways)...)
+	}
+
+	// If not routing policies exist for this network, no gateways will be returned. So fetch for this specific network then.
+	if !selfInPeeredNetworks {
+		dbGateways := database.GetOnlineGatewaysForNetworkInBbox(networkId, west, east, north, south)
+		responseGateways = append(responseGateways, responses.DbGatewaysToResponse(dbGateways)...)
+	}
 
 	render.JSON(writer, request, responseGateways)
 
