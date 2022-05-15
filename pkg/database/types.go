@@ -228,6 +228,11 @@ type GatewayBoundingBox struct {
 	West      float64 `gorm:"not null;index:idx_coords_bbox"`
 }
 
+type GatewayWithBoundingBox struct {
+	Gateway
+	GatewayBoundingBox
+}
+
 // Indexers: These structs are the same as the ones above, but used to index the cache maps
 type DeviceIndexer struct {
 	NetworkId string

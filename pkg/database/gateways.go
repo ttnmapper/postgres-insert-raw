@@ -76,14 +76,21 @@ func GetGatewaysByNameOrId(gatewaySearch string) []Gateway {
 	return result
 }
 
-func GetOnlineGatewaysForNetwork(networkId string) []Gateway {
+func GetOnlineGatewaysForNetwork(networkId string) []GatewayWithBoundingBox {
 
 	if cacheGateways, ok := networkOnlineGatewaysCache.Get(networkId); ok {
-		return cacheGateways.([]Gateway)
+		return cacheGateways.([]GatewayWithBoundingBox)
 	}
 
-	var gateways []Gateway
-	Db.Where("network_id = ? AND last_heard > NOW() - INTERVAL '5 DAY'", networkId).Find(&gateways)
+	var gateways []GatewayWithBoundingBox
+	Db.Table("gateways").
+		Select("gateways.id, gateways.network_id, gateways.gateway_id, gateways.gateway_eui, gateways.name, "+
+			"gateways.last_heard, gateways.latitude, gateways.longitude, gateways.altitude, gateways.attributes, "+
+			"gateway_bounding_boxes.north, gateway_bounding_boxes.south, gateway_bounding_boxes.west, gateway_bounding_boxes.east").
+		Joins("JOIN gateway_bounding_boxes on gateways.gateway_id = gateway_bounding_boxes.gateway_id "+
+			"and gateways.network_id = gateway_bounding_boxes.network_id").
+		Where("gateways.network_id = ? AND gateways.last_heard > NOW() - INTERVAL '5 DAY'", networkId).
+		Find(&gateways)
 
 	// Store in cache
 	networkOnlineGatewaysCache.Set(networkId, gateways, cache.DefaultExpiration)

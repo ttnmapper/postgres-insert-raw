@@ -23,6 +23,11 @@ type Gateway struct {
 	Longitude float64   `json:"longitude"`
 	Altitude  int32     `json:"altitude"`
 
+	North float64 `json:"north"`
+	South float64 `json:"south"`
+	West  float64 `json:"west"`
+	East  float64 `json:"east"`
+
 	Attributes map[string]interface{} `json:"attributes"`
 }
 

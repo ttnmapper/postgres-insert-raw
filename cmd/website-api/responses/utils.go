@@ -53,3 +53,47 @@ func DbGatewayToResponse(gateway database.Gateway) Gateway {
 
 	return responseGw
 }
+
+func DbGatewaysWithBoundingBoxToResponse(dbGateways []database.GatewayWithBoundingBox) []Gateway {
+	responseGateways := make([]Gateway, 0)
+
+	for _, gateway := range dbGateways {
+		responseGw := DbGatewayWithBoundingBoxToResponse(gateway)
+		responseGateways = append(responseGateways, responseGw)
+	}
+
+	return responseGateways
+}
+
+func DbGatewayWithBoundingBoxToResponse(gateway database.GatewayWithBoundingBox) Gateway {
+
+	responseGw := Gateway{
+		DatabaseId: gateway.Gateway.ID,
+		NetworkId:  gateway.Gateway.NetworkId,
+		GatewayId:  gateway.Gateway.GatewayId,
+		LastHeard:  gateway.LastHeard,
+		Latitude:   gateway.Latitude,
+		Longitude:  gateway.Longitude,
+		Altitude:   gateway.Altitude,
+		North:      gateway.North,
+		South:      gateway.South,
+		West:       gateway.West,
+		East:       gateway.East,
+	}
+
+	if gateway.GatewayEui != nil {
+		responseGw.GatewayEUI = *gateway.GatewayEui
+	}
+	if gateway.Name != nil {
+		responseGw.Name = *gateway.Name
+	}
+
+	attributes := make(map[string]interface{}, 0)
+	err := json.Unmarshal(gateway.Attributes, &attributes)
+	if err != nil {
+		// nothing
+	}
+	responseGw.Attributes = attributes
+
+	return responseGw
+}

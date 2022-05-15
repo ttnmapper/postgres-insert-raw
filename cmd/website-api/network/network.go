@@ -53,13 +53,13 @@ func GetGateways(writer http.ResponseWriter, request *http.Request) {
 			selfInPeeredNetworks = true
 		}
 		dbGateways := database.GetOnlineGatewaysForNetwork(network.ForwarderNetworkId)
-		responseGateways = append(responseGateways, responses.DbGatewaysToResponse(dbGateways)...)
+		responseGateways = append(responseGateways, responses.DbGatewaysWithBoundingBoxToResponse(dbGateways)...)
 	}
 
 	// If not routing policies exist for this network, no gateways will be returned. So fetch for this specific network then.
 	if !selfInPeeredNetworks {
 		dbGateways := database.GetOnlineGatewaysForNetwork(networkId)
-		responseGateways = append(responseGateways, responses.DbGatewaysToResponse(dbGateways)...)
+		responseGateways = append(responseGateways, responses.DbGatewaysWithBoundingBoxToResponse(dbGateways)...)
 	}
 
 	render.JSON(writer, request, responseGateways)
@@ -100,7 +100,7 @@ func GetGatewaysPaged(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	dbGateways = dbGateways[pageStart:pageEnd]
-	responseGateways := responses.DbGatewaysToResponse(dbGateways)
+	responseGateways := responses.DbGatewaysWithBoundingBoxToResponse(dbGateways)
 	render.JSON(writer, request, responseGateways)
 }
 
