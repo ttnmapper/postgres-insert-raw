@@ -220,8 +220,8 @@ type PacketBrokerRoutingPolicy struct {
 
 type GatewayBoundingBox struct {
 	ID        uint
-	NetworkId string  `gorm:"type:text;UNIQUE_INDEX:idx_bbox_gtw_id"`
-	GatewayId string  `gorm:"type:text;UNIQUE_INDEX:idx_bbox_gtw_id"`
+	NetworkId string  `gorm:"type:text;index:idx_bbox_gtw_id,unique"`
+	GatewayId string  `gorm:"type:text;index:idx_bbox_gtw_id,unique"`
 	North     float64 `gorm:"not null;index:idx_coords_bbox"`
 	South     float64 `gorm:"not null;index:idx_coords_bbox"`
 	East      float64 `gorm:"not null;index:idx_coords_bbox"`

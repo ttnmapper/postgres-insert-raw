@@ -27,5 +27,6 @@ func IniDb() {
 func TestMigrateDb(t *testing.T) {
 	IniDb()
 
-	database.AutoMigrate(&database.GridCell{}, &database.RadarBeam{})
+	//database.AutoMigrate(&database.GridCell{}, &database.RadarBeam{})
+	database.AutoMigrate(&database.GatewayBoundingBox{})
 }
