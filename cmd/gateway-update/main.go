@@ -153,6 +153,10 @@ func main() {
 				log.Println("Fetching Packet Broker gateway statuses")
 				fetchPacketBrokerStatuses()
 			}
+			if service == "routing" {
+				log.Println("Fetching Packet Broker routing policies")
+				FetchPbRoutingPolicies()
+			}
 			if service == "helium" {
 				log.Println("Fetching Helium hotspot statuses")
 				fetchHeliumStatuses()
