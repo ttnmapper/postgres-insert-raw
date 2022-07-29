@@ -2,14 +2,32 @@ package radar
 
 import (
 	geo "github.com/kellydunn/golang-geo"
+	"github.com/patrickmn/go-cache"
 	"github.com/paulmach/go.geojson"
 	"log"
 	"sort"
+	"time"
 	"ttnmapper-postgres-insert-raw/pkg/aggregations/radar_beam"
 	"ttnmapper-postgres-insert-raw/pkg/database"
 )
 
+var radarMultiCache *cache.Cache
+
 func GenerateRadarMulti(networkId string, gatewayId string) []byte {
+	cacheKey := networkId + "/" + gatewayId
+
+	// Create cache if it does not exist
+	if radarMultiCache == nil {
+		radarMultiCache = cache.New(24*time.Hour, 10*time.Minute)
+	}
+	// Try to get radar from cache
+	if x, found := radarMultiCache.Get(cacheKey); found {
+		log.Println("From cache")
+		geoJsonString := x.([]byte)
+		return geoJsonString
+	}
+	log.Println("Generating new radar")
+
 	gatewayBeams := make(map[int]map[uint]database.RadarBeam, 0)
 
 	gateway, _ := database.GetGateway(database.GatewayIndexer{
@@ -32,6 +50,7 @@ func GenerateRadarMulti(networkId string, gatewayId string) []byte {
 	FillZerosMulti(gatewayBeams)
 	//log.Println(utils.PrettyPrint(gatewayBeams))
 	geoJsonString := CreateGeoJsonMulti(gatewayLocation, gatewayBeams)
+	radarMultiCache.Set(cacheKey, geoJsonString, cache.DefaultExpiration)
 	return geoJsonString
 }
 
@@ -151,8 +170,8 @@ func CreateGeoJsonMulti(gatewayLocation *geo.Point, gatewayBeams map[int]map[uin
 		}
 
 		polygonFeature.SetProperty("fill", colour)
-		polygonFeature.SetProperty("fill-opacity", 0.5)
-		polygonFeature.SetProperty("stroke-width", 0)
+		//polygonFeature.SetProperty("fill-opacity", 0.5)
+		//polygonFeature.SetProperty("stroke-width", 0)
 
 		fc.AddFeature(polygonFeature)
 	}

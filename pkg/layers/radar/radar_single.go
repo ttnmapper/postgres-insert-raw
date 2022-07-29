@@ -2,12 +2,30 @@ package radar
 
 import (
 	geo "github.com/kellydunn/golang-geo"
+	"github.com/patrickmn/go-cache"
 	geojson "github.com/paulmach/go.geojson"
 	"log"
+	"time"
 	"ttnmapper-postgres-insert-raw/pkg/database"
 )
 
+var radarSingleCache *cache.Cache
+
 func GenerateRadarSingle(networkId string, gatewayId string) []byte {
+	cacheKey := networkId + "/" + gatewayId
+
+	// Create cache if it does not exist
+	if radarSingleCache == nil {
+		radarSingleCache = cache.New(24*time.Hour, 10*time.Minute)
+	}
+	// Try to get radar from cache
+	if x, found := radarSingleCache.Get(cacheKey); found {
+		log.Println("From cache")
+		geoJsonString := x.([]byte)
+		return geoJsonString
+	}
+	log.Println("Generating new radar")
+
 	gatewayBeams := make(map[uint]database.RadarBeam, 0)
 
 	gateway, _ := database.GetGateway(database.GatewayIndexer{
@@ -30,6 +48,7 @@ func GenerateRadarSingle(networkId string, gatewayId string) []byte {
 	FillZerosSingle(gatewayBeams)
 	//log.Println(utils.PrettyPrint(gatewayBeams))
 	geoJsonString := CreateGeoJsonSingle(gatewayLocation, gatewayBeams)
+	radarSingleCache.Set(cacheKey, geoJsonString, cache.DefaultExpiration)
 	return geoJsonString
 }
 

@@ -113,7 +113,7 @@ func GetGateway(indexer GatewayIndexer) (Gateway, error) {
 	var gatewayDb Gateway
 
 	var gatewayIndex = indexer.NetworkId + "/" + indexer.GatewayId
-	if cacheGateway, ok := networkOnlineGatewaysCache.Get(gatewayIndex); ok {
+	if cacheGateway, ok := gatewayDbCache.Get(gatewayIndex); ok {
 		return cacheGateway.(Gateway), nil
 	} else {
 		gatewayDb = Gateway{NetworkId: indexer.NetworkId, GatewayId: indexer.GatewayId}
@@ -133,7 +133,7 @@ func GetOrCreateGateway(indexer GatewayIndexer) (Gateway, error) {
 	var gatewayDb Gateway
 
 	var gatewayIndex = indexer.NetworkId + "/" + indexer.GatewayId
-	if cacheGateway, ok := networkOnlineGatewaysCache.Get(gatewayIndex); ok {
+	if cacheGateway, ok := gatewayDbCache.Get(gatewayIndex); ok {
 		return cacheGateway.(Gateway), nil
 	} else {
 		gatewayDb = Gateway{NetworkId: indexer.NetworkId, GatewayId: indexer.GatewayId}
