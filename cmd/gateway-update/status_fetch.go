@@ -294,20 +294,38 @@ func fetchTtsStatuses() {
 			log.Println(err.Error())
 		}
 
-		for _, gateway := range gateways {
-			status, err := thethingsstack.FetchStatus(gateway, network.ApiKey)
+		// Fetch gateway statuses in batches
+		batchSize := 50
+		for i := 0; i < len(gateways); i += batchSize {
+			endIndex := i + batchSize
+			if len(gateways) < endIndex {
+				endIndex = len(gateways)
+			}
+			currentlyFetchingGateways := gateways[i:endIndex]
+			gatewayStatuses, err := thethingsstack.FetchStatusesBatch(currentlyFetchingGateways, network.ApiKey)
 			if err != nil {
 				log.Println(err.Error())
 				continue
 			}
-
-			ttnMapperGateway, err := thethingsstack.TtsApiGatewayToTtnMapperGateway(network.TenantId, gateway, status)
-			if err != nil {
-				log.Println(err)
-				continue
+			if gatewayStatuses.Entries == nil {
+				log.Println("Status Entries is nil")
 			}
-			UpdateGateway(ttnMapperGateway)
-			gatewayCount++
+			// Iterate status responses
+			for gatewayId, status := range gatewayStatuses.Entries {
+				// Iterate fetched gateway list to find requested gateway's data
+				for _, gateway := range currentlyFetchingGateways {
+					// If we found the gateway, ie the id matches, update its status
+					if gateway.Ids.GatewayId == gatewayId {
+						ttnMapperGateway, err := thethingsstack.TtsApiGatewayToTtnMapperGateway(network.TenantId, gateway, status)
+						if err != nil {
+							log.Println(err)
+							continue
+						}
+						UpdateGateway(ttnMapperGateway)
+						gatewayCount++
+					}
+				}
+			}
 		}
 	}
 

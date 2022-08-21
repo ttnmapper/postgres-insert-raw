@@ -2,11 +2,13 @@ package thethingsstack
 
 import "time"
 
+type GatewayIds struct {
+	GatewayId string `json:"gateway_id"`
+	Eui       string `json:"eui,omitempty"`
+}
+
 type Gateway struct {
-	Ids struct {
-		GatewayId string `json:"gateway_id"`
-		Eui       string `json:"eui"`
-	} `json:"ids"`
+	Ids         GatewayIds        `json:"ids"`
 	CreatedAt   time.Time         `json:"created_at"`
 	UpdatedAt   time.Time         `json:"updated_at"`
 	DeletedAt   time.Time         `json:"deleted_at"`
@@ -93,4 +95,14 @@ type Status struct {
 		DownlinkUtilizationLimit float64 `json:"downlink_utilization_limit"`
 		DownlinkUtilization      float64 `json:"downlink_utilization,omitempty"`
 	} `json:"sub_bands"`
+}
+
+type GatewayStatsBatchRequest struct {
+	GatewayIds []GatewayIds `json:"gateway_ids"`
+	//FieldMask  struct {
+	//} `json:"field_mask,omitempty"`
+}
+
+type GatewayStatsBatchResponse struct {
+	Entries map[string]Status
 }

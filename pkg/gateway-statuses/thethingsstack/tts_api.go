@@ -1,6 +1,7 @@
 package thethingsstack
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -44,6 +45,46 @@ func FetchGateways(tenantId string, apiKey string) ([]Gateway, error) {
 		return nil, err
 	}
 	return webData.Gateways, nil
+}
+
+func FetchStatusesBatch(gateways []Gateway, apiKey string) (GatewayStatsBatchResponse, error) {
+	// Use gateway_server_address with endpoint
+	// /api/v3/gs/gateways/connection/stats
+
+	url := fmt.Sprintf("https://%s/api/v3/gs/gateways/connection/stats", gateways[0].GatewayServerAddress)
+	log.Println(url, apiKey)
+	httpClient := http.Client{
+		Timeout: time.Second * 60, // Maximum of 1 minute
+	}
+
+	postData := GatewayStatsBatchRequest{}
+	for _, gateway := range gateways {
+		postData.GatewayIds = append(postData.GatewayIds, gateway.Ids)
+		//postData.GatewayIds = append(postData.GatewayIds, GatewayIds{GatewayId: gateway.Ids.GatewayId})
+	}
+	postJson, err := json.Marshal(postData)
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(postJson))
+	if err != nil {
+		return GatewayStatsBatchResponse{}, err
+	}
+
+	req.Header.Set("User-Agent", "ttnmapper-update-gateway")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	res, err := httpClient.Do(req)
+	if err != nil {
+		return GatewayStatsBatchResponse{}, err
+	}
+
+	defer res.Body.Close()
+
+	webData := GatewayStatsBatchResponse{}
+	err = json.NewDecoder(res.Body).Decode(&webData)
+	if err != nil {
+		return GatewayStatsBatchResponse{}, err
+	}
+	return webData, nil
 }
 
 func FetchStatus(gateway Gateway, apiKey string) (Status, error) {
