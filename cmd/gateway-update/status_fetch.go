@@ -289,7 +289,6 @@ func fetchTtsStatuses() {
 
 	gatewayCount := 0
 	for _, network := range networks {
-		log.Println("[TTS API] Fetching statuses for network ", network.TenantId)
 		gateways, err := thethingsstack.FetchGateways(network.TenantId, network.ApiKey)
 		if err != nil {
 			log.Println(err.Error())
@@ -318,7 +317,7 @@ func fetchTtsStatuses() {
 				for _, gateway := range currentlyFetchingGateways {
 					// If we found the gateway, ie the id matches, update its status
 					if gateway.Ids.GatewayId == gatewayId {
-						log.Println("  ", network.TenantId, gatewayId)
+						log.Println(network.TenantId, gatewayId)
 						ttnMapperGateway, err := thethingsstack.TtsApiGatewayToTtnMapperGateway(network.TenantId, gateway, status)
 						if err != nil {
 							log.Println(err)

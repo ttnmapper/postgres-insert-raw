@@ -52,7 +52,6 @@ func FetchStatusesBatch(gateways []Gateway, apiKey string) (GatewayStatsBatchRes
 	// /api/v3/gs/gateways/connection/stats
 
 	url := fmt.Sprintf("https://%s/api/v3/gs/gateways/connection/stats", gateways[0].GatewayServerAddress)
-	log.Println(url, apiKey)
 	httpClient := http.Client{
 		Timeout: time.Second * 60, // Maximum of 1 minute
 	}
