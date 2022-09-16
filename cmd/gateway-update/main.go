@@ -47,6 +47,9 @@ type Configuration struct {
 	FetchHelium         bool `envconfig:"FETCH_HELIUM"`
 	FetchHeliumInterval int  `envconfig:"FETCH_HELIUM_INTERVAL"`
 
+	FetchHeliumSnapshot         bool `envconfig:"FETCH_HELIUM_SNAPSHOT"`
+	FetchHeliumSnapshotInterval int  `envconfig:"FETCH_HELIUM_SNAPSHOT_INTERVAL"`
+
 	FetchTts         bool `envconfig:"FETCH_TTS"`
 	FetchTtsInterval int  `envconfig:"FETCH_TTS_INTERVAL"`
 }
@@ -71,16 +74,18 @@ var myConfiguration = Configuration{
 
 	FetchAmqp: false,
 	//FetchNoc:          false,
-	FetchWeb:                  false,
-	FetchWebInterval:          3600,
-	FetchPacketBroker:         false,
-	FetchPacketBrokerInterval: 3600,
-	FetchRouting:              false,
-	FetchRoutingInterval:      86400,
-	FetchHelium:               false,
-	FetchHeliumInterval:       86400,
-	FetchTts:                  false,
-	FetchTtsInterval:          3600,
+	FetchWeb:                    false,
+	FetchWebInterval:            3600,
+	FetchPacketBroker:           false,
+	FetchPacketBrokerInterval:   3600,
+	FetchRouting:                false,
+	FetchRoutingInterval:        86400,
+	FetchHelium:                 false,
+	FetchHeliumInterval:         86400,
+	FetchHeliumSnapshot:         false,
+	FetchHeliumSnapshotInterval: 43200, // twice per day in case we tried fetching between 00:00 and 01:00 while the snapshot is not yet available
+	FetchTts:                    false,
+	FetchTtsInterval:            3600,
 }
 
 var (
@@ -160,6 +165,10 @@ func main() {
 			if service == "helium" {
 				log.Println("Fetching Helium hotspot statuses")
 				fetchHeliumStatuses()
+			}
+			if service == "helium-snapshot" {
+				log.Println("Fetching Snapshot of Helium hotspot statuses")
+				fetchHeliumSnapshot()
 			}
 			if service == "tts" {
 				log.Println("Fetching TTS network statuses")

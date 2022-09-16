@@ -48,6 +48,11 @@ func TestFetchHeliumStatuses(t *testing.T) {
 	fetchHeliumStatuses()
 }
 
+func TestFetchHeliumSnapshot(t *testing.T) {
+	initTests()
+	fetchHeliumSnapshot()
+}
+
 func TestFetchTtsStatuses(t *testing.T) {
 	initTests()
 	fetchTtsStatuses()

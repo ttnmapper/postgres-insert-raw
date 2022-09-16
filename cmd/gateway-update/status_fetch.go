@@ -105,6 +105,7 @@ func startPeriodicFetchers() {
 	webTicker := time.NewTicker(time.Duration(myConfiguration.FetchWebInterval) * time.Second)
 	pbTicker := time.NewTicker(time.Duration(myConfiguration.FetchPacketBrokerInterval) * time.Second)
 	heliumTicker := time.NewTicker(time.Duration(myConfiguration.FetchHeliumInterval) * time.Second)
+	heliumSnapshotTicker := time.NewTicker(time.Duration(myConfiguration.FetchHeliumSnapshotInterval) * time.Second)
 	ttsTicker := time.NewTicker(time.Duration(myConfiguration.FetchTtsInterval) * time.Second)
 	pbRoutingTicker := time.NewTicker(time.Duration(myConfiguration.FetchRoutingInterval) * time.Second)
 
@@ -126,6 +127,10 @@ func startPeriodicFetchers() {
 			case <-heliumTicker.C:
 				if myConfiguration.FetchHelium {
 					go fetchHeliumStatuses()
+				}
+			case <-heliumSnapshotTicker.C:
+				if myConfiguration.FetchHeliumSnapshot {
+					go fetchHeliumSnapshot()
 				}
 			case <-ttsTicker.C:
 				if myConfiguration.FetchTts {
@@ -224,6 +229,34 @@ func fetchPacketBrokerStatuses() {
 
 	log.Printf("Fetched %d gateways from Packet Broker", gatewayCount)
 	busyFetchingPacketBroker = false
+}
+
+var busyFetchingHeliumSnapshot = false
+
+func fetchHeliumSnapshot() {
+	if busyFetchingHeliumSnapshot {
+		return
+	}
+	busyFetchingHeliumSnapshot = true
+
+	hotspotCount := 0
+	hotspots, err := helium.FetchSnapshot()
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+
+	for _, hotspot := range hotspots {
+		hotspotCount++
+		ttnMapperGateway, err := helium.HeliumHotspotSnapshotToTtnMapperGateway(hotspot)
+		if err == nil {
+			UpdateGateway(ttnMapperGateway)
+		}
+	}
+
+	log.Printf("Fetched %d hotspots from Helium Snapshot", len(hotspots))
+
+	busyFetchingHeliumSnapshot = false
 }
 
 /*

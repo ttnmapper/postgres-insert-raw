@@ -123,3 +123,18 @@ type HotspotStatus struct {
 	ListenAddrs interface{} `json:"listen_addrs"`
 	Height      interface{} `json:"height"`
 }
+
+type HotspotSnapshot struct {
+	Address      string  `json:"address"`
+	Mode         string  `json:"mode"`
+	Owner        string  `json:"owner"`
+	Location     string  `json:"location"`
+	Name         string  `json:"name"`
+	Online       string  `json:"online"`
+	Latitude     float64 `json:"lat"`
+	Longitude    float64 `json:"lng"`
+	ShortStreet  string  `json:"short_street"`
+	ShortCity    string  `json:"short_city"`
+	ShortState   string  `json:"short_state"`
+	ShortCountry string  `json:"short_country"`
+}
