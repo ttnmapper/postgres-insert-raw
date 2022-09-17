@@ -10,7 +10,7 @@ import (
 	"ttnmapper-postgres-insert-raw/pkg/types"
 )
 
-func FetchSnapshot() ([]HotspotSnapshot, error) {
+func FetchSnapshot() (time.Time, []HotspotSnapshot, error) {
 	// Fetch the latest snapshot which is stored at 01:00:00Z today
 	today := time.Now()
 	filename := fmt.Sprintf("%4d-%02d-%02d", today.Year(), today.Month(), today.Day())
@@ -19,25 +19,31 @@ func FetchSnapshot() ([]HotspotSnapshot, error) {
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, err
+		return time.Time{}, nil, err
+	}
+
+	// use file creation time as last heard for hotspots
+	lastModified, err := http.ParseTime(resp.Header.Get("Last-Modified"))
+	if err != nil {
+		return time.Time{}, nil, err
 	}
 
 	reader, err := gzip.NewReader(resp.Body)
 	if err != nil {
-		return nil, err
+		return time.Time{}, nil, err
 	}
 	defer reader.Close()
 
 	var statuses []HotspotSnapshot
 	err = json.NewDecoder(reader).Decode(&statuses)
 	if err != nil {
-		return nil, err
+		return time.Time{}, nil, err
 	}
 
-	return statuses, nil
+	return lastModified, statuses, nil
 }
 
-func HeliumHotspotSnapshotToTtnMapperGateway(hotspot HotspotSnapshot) (types.TtnMapperGateway, error) {
+func HotspotSnapshotToTtnMapperGateway(snapshotTime time.Time, hotspot HotspotSnapshot) (types.TtnMapperGateway, error) {
 
 	gateway := types.TtnMapperGateway{
 		NetworkId:    "NS_HELIUM://000024",
@@ -63,7 +69,7 @@ func HeliumHotspotSnapshotToTtnMapperGateway(hotspot HotspotSnapshot) (types.Ttn
 
 	// Only accept last heard times for online gateways
 	if hotspot.Online == "online" {
-		gateway.Time = time.Now().UnixNano()
+		gateway.Time = snapshotTime.UnixNano()
 	} else {
 		gateway.Time = 0
 	}

@@ -240,7 +240,7 @@ func fetchHeliumSnapshot() {
 	busyFetchingHeliumSnapshot = true
 
 	hotspotCount := 0
-	hotspots, err := helium.FetchSnapshot()
+	snapshotTime, hotspots, err := helium.FetchSnapshot()
 	if err != nil {
 		log.Println(err.Error())
 		return
@@ -248,7 +248,7 @@ func fetchHeliumSnapshot() {
 
 	for _, hotspot := range hotspots {
 		hotspotCount++
-		ttnMapperGateway, err := helium.HeliumHotspotSnapshotToTtnMapperGateway(hotspot)
+		ttnMapperGateway, err := helium.HotspotSnapshotToTtnMapperGateway(snapshotTime, hotspot)
 		if err == nil {
 			UpdateGateway(ttnMapperGateway)
 		}

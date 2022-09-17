@@ -7,14 +7,14 @@ import (
 )
 
 func TestFetchSnapshot(t *testing.T) {
-	hotspots, err := FetchSnapshot()
+	snapshotTime, hotspots, err := FetchSnapshot()
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
 
 	log.Printf("Found %d hotspots in snapshot", len(hotspots))
 	for _, hotspot := range hotspots {
-		gateway, err := HeliumHotspotSnapshotToTtnMapperGateway(hotspot)
+		gateway, err := HotspotSnapshotToTtnMapperGateway(snapshotTime, hotspot)
 		if err != nil {
 			t.Fatalf(err.Error())
 		}
