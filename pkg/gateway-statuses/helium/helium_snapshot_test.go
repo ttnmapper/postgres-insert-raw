@@ -3,10 +3,13 @@ package helium
 import (
 	"log"
 	"testing"
-	"ttnmapper-postgres-insert-raw/pkg/utils"
 )
 
 func TestFetchSnapshot(t *testing.T) {
+	//online := 0
+	//offline := 0
+	//other := 0
+
 	snapshotTime, hotspots, err := FetchSnapshot()
 	if err != nil {
 		t.Fatalf(err.Error())
@@ -18,7 +21,18 @@ func TestFetchSnapshot(t *testing.T) {
 		if err != nil {
 			t.Fatalf(err.Error())
 		}
-		log.Println(utils.PrettyPrint(gateway))
-		break
+		if hotspot.Online != "online" {
+			log.Println(gateway.Time)
+		}
+		//if hotspot.Online == "online" {
+		//	online++
+		//} else if hotspot.Online == "offline" {
+		//	offline++
+		//} else {
+		//	other++
+		//}
 	}
+	//log.Println("Online", online)
+	//log.Println("Offline", offline)
+	//log.Println("Other", other)
 }
