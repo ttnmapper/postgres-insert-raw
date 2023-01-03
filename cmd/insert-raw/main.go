@@ -162,6 +162,11 @@ func insertToPostgres(thread int) {
 		for _, gateway := range message.Gateways {
 			gatewayStart := time.Now()
 
+			// If RSSI is larger than -50, do not store. We've seen +2dBm RSSI values from a bug in RAK Wireless gateways.
+			if gateway.Rssi > -50.0 {
+				continue
+			}
+
 			// Copy required fields in correct format into a database row struct
 			entry, err := database.UplinkMessageToPacket(message, gateway)
 			if err != nil {
