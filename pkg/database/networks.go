@@ -7,3 +7,9 @@ func GetPeeredNetworks(networkId string) []PacketBrokerRoutingPolicy {
 		Find(&routingPolicies)
 	return routingPolicies
 }
+
+func GetNetworkSubscription(networkId string) NetworkSubscription {
+	var subscription NetworkSubscription
+	Db.Where("network_id = ?", networkId).First(&subscription)
+	return subscription
+}

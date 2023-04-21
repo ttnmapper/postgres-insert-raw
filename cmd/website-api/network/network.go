@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 	"ttnmapper-postgres-insert-raw/cmd/website-api/responses"
 	"ttnmapper-postgres-insert-raw/pkg/database"
@@ -49,25 +50,63 @@ func GetGateways(writer http.ResponseWriter, request *http.Request) {
 
 	selfInPeeredNetworks := false
 	for _, network := range peeredNetworks {
+		networkSubscription := database.GetNetworkSubscription(network.ForwarderNetworkId)
+
 		if network.ForwarderNetworkId == networkId {
 			selfInPeeredNetworks = true
 		}
 		dbGateways := database.GetOnlineGatewaysForNetwork(network.ForwarderNetworkId)
-		responseGateways = append(responseGateways, responses.DbGatewaysWithBoundingBoxToResponse(dbGateways)...)
+
+		for _, dbGateway := range dbGateways {
+			if dbGateway.Latitude == 0 && dbGateway.Longitude == 0 {
+				continue
+			}
+			gateway := responses.DbGatewayWithBoundingBoxToResponse(dbGateway)
+			gateway = ApplySubscription(gateway, networkSubscription)
+			responseGateways = append(responseGateways, gateway)
+		}
 	}
 
 	// If not routing policies exist for this network, no gateways will be returned. So fetch for this specific network then.
 	if !selfInPeeredNetworks {
+		networkSubscription := database.GetNetworkSubscription(networkId)
+
 		dbGateways := database.GetOnlineGatewaysForNetwork(networkId)
-		responseGateways = append(responseGateways, responses.DbGatewaysWithBoundingBoxToResponse(dbGateways)...)
+		for _, dbGateway := range dbGateways {
+			if dbGateway.Latitude == 0 && dbGateway.Longitude == 0 {
+				continue
+			}
+			gateway := responses.DbGatewayWithBoundingBoxToResponse(dbGateway)
+			gateway = ApplySubscription(gateway, networkSubscription)
+			responseGateways = append(responseGateways, gateway)
+		}
 	}
 
 	render.JSON(writer, request, responseGateways)
+}
 
-	//for _, gateway := range responseGateways {
-	//	render.JSON(writer, request, gateway)
-	//	//writer.Write([]byte("\n"))
-	//}
+func ApplySubscription(gateway responses.Gateway, subscription database.NetworkSubscription) responses.Gateway {
+	// only include name and description if network has a subscription
+	if subscription.ID != 0 {
+		if !subscription.GatewayNames {
+			gateway.Name = ""
+		}
+		if !subscription.GatewayDescriptions {
+			if _, ok := gateway.Attributes["description"]; ok {
+				gateway.Attributes["description"] = ""
+			}
+		}
+	} else {
+		networkIdPrefix, _, _ := strings.Cut(gateway.NetworkId, ":")
+		gateway.NetworkId = networkIdPrefix
+		gateway.GatewayId = ""
+		gateway.Name = ""
+		if _, ok := gateway.Attributes["description"]; ok {
+			gateway.Attributes["description"] = ""
+		}
+	}
+
+	return gateway
 }
 
 func GetGatewaysPaged(writer http.ResponseWriter, request *http.Request) {

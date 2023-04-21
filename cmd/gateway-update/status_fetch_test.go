@@ -59,6 +59,6 @@ func TestFetchTtsStatuses(t *testing.T) {
 }
 
 func TestFetchPbRoutingPolicies(t *testing.T) {
-	//initTests()
+	initTests()
 	FetchPbRoutingPolicies()
 }

@@ -218,6 +218,13 @@ type PacketBrokerRoutingPolicy struct {
 	DownlinkApplicationData bool
 }
 
+type NetworkSubscription struct {
+	ID                  uint
+	NetworkId           string `gorm:"type:text;index:idx_subs_networkid,unique"`
+	GatewayNames        bool
+	GatewayDescriptions bool
+}
+
 type GatewayBoundingBox struct {
 	ID        uint
 	NetworkId string  `gorm:"type:text;index:idx_bbox_gtw_id,unique"`
