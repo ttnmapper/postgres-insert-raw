@@ -32,10 +32,10 @@ func TestFetchTtsNetwork(t *testing.T) {
 
 	//tenantId := "jpmeijers"
 	//apiKey := "NNSXS."
-	tenantId := "packetworx"
-	apiKey := "NNSXS."
-	//tenantId := "redyteliot"
+	//tenantId := "packetworx"
 	//apiKey := "NNSXS."
+	tenantId := "redyteliot"
+	apiKey := "NNSXS."
 
 	gateways, err := FetchGateways(tenantId, apiKey)
 	if err != nil {
@@ -73,7 +73,6 @@ func TestFetchTtsNetwork(t *testing.T) {
 						log.Println(err)
 						continue
 					}
-					//UpdateGateway(ttnMapperGateway)
 					log.Println(utils.PrettyPrint(ttnMapperGateway))
 					gatewayCount++
 				}
