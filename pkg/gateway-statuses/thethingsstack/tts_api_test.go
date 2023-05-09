@@ -8,36 +8,6 @@ import (
 	"ttnmapper-postgres-insert-raw/pkg/utils"
 )
 
-func TestFetchStatuses(t *testing.T) {
-	//tenantId := "jpmeijers"
-	//apiKey := "NNSXS.7KYTHCV27ZWVIUHJCEA2X3GE3JMRRB3UFEZXXWY.CJRCATPOYFGSHKSSBJLKDIVX2HDHZKDJHYZSUGWY75TOL4CYMQOQ"
-	tenantId := "packetworx"
-	apiKey := "NNSXS.MVERCW4V6PM4VAELEQNHX3YX5MZSEINNKWO7NEY.NBWE6ENQZLOISGCFHYCPTZLDZTU5V6EH4LHXGFBJHWBKS67CIXAQ"
-	gateways, err := FetchGateways(tenantId, apiKey)
-	if err != nil {
-		log.Println(err.Error())
-	}
-	//log.Println(utils.PrettyPrint(gateways))
-
-	for _, gateway := range gateways {
-		log.Println(utils.PrettyPrint(gateway.Antennas))
-		continue
-
-		status, err := FetchStatus(gateway, apiKey)
-		if err != nil {
-			log.Println(err.Error())
-		}
-		//log.Println(gateway.Ids.GatewayId, lastHeard)
-
-		ttnMapperGateway, err := TtsApiGatewayToTtnMapperGateway(tenantId, gateway, status)
-		if err != nil {
-			log.Println(err)
-		}
-		//log.Println(utils.PrettyPrint(ttnMapperGateway))
-		log.Println(ttnMapperGateway.GatewayId, ttnMapperGateway.Latitude, ttnMapperGateway.Longitude)
-	}
-}
-
 func TestParseV3GatewayList(t *testing.T) {
 	buf, err := ioutil.ReadFile("gateway-list-example.json")
 	if err != nil {
@@ -56,4 +26,59 @@ func TestParseV3GatewayList(t *testing.T) {
 	//	gateway, _ := TtsApiGatewayToTtnMapperGateway(ttsGateway)
 	//	log.Println(utils.PrettyPrint(gateway))
 	//}
+}
+
+func TestFetchTtsNetwork(t *testing.T) {
+
+	//tenantId := "jpmeijers"
+	//apiKey := "NNSXS."
+	tenantId := "packetworx"
+	apiKey := "NNSXS."
+	//tenantId := "redyteliot"
+	//apiKey := "NNSXS."
+
+	gateways, err := FetchGateways(tenantId, apiKey)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	// Fetch gateway statuses in batches
+	gatewayCount := 0
+	batchSize := 50
+	for i := 0; i < len(gateways); i += batchSize {
+		log.Printf("[TTS API] Fetching batch of %d gateway statuses", batchSize)
+		endIndex := i + batchSize
+		if len(gateways) < endIndex {
+			endIndex = len(gateways)
+		}
+		currentlyFetchingGateways := gateways[i:endIndex]
+		gatewayStatuses, err := FetchStatusesBatch(currentlyFetchingGateways, apiKey)
+		if err != nil {
+			log.Println(err.Error())
+			continue
+		}
+		if gatewayStatuses.Entries == nil {
+			log.Println("[TTS API] Status Entries is nil")
+		}
+		// Iterate status responses
+		for gatewayId, status := range gatewayStatuses.Entries {
+			// Iterate fetched gateway list to find requested gateway's data
+			for _, gateway := range currentlyFetchingGateways {
+				// If we found the gateway, ie the id matches, update its status
+				if gateway.Ids.GatewayId == gatewayId {
+					log.Println(tenantId, gatewayId)
+					log.Println(utils.PrettyPrint(gateway))
+					ttnMapperGateway, err := TtsApiGatewayToTtnMapperGateway(tenantId, gateway, *status)
+					if err != nil {
+						log.Println(err)
+						continue
+					}
+					//UpdateGateway(ttnMapperGateway)
+					log.Println(utils.PrettyPrint(ttnMapperGateway))
+					gatewayCount++
+				}
+			}
+		}
+	}
+	log.Printf("[TTS API] Fetched %d gateway statuses for network %s", gatewayCount, tenantId)
 }

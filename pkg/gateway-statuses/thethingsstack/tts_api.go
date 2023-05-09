@@ -132,10 +132,19 @@ func FetchStatus(gateway Gateway, apiKey string) (Status, error) {
 
 func TtsApiGatewayToTtnMapperGateway(tenantId string, gatewayIn Gateway, statusIn ttnpb.GatewayConnectionStats) (types.TtnMapperGateway, error) {
 
-	lastHeard := time.Unix(statusIn.LastStatusReceivedAt.Seconds, int64(statusIn.LastStatusReceivedAt.Nanos))
-	lastUplink := time.Unix(statusIn.LastUplinkReceivedAt.Seconds, int64(statusIn.LastUplinkReceivedAt.Nanos))
-	if lastHeard.Before(lastUplink) {
-		lastHeard = lastUplink
+	lastHeard := time.Time{}
+
+	if statusIn.LastStatusReceivedAt != nil {
+		lastStatus := time.Unix(statusIn.LastStatusReceivedAt.Seconds, int64(statusIn.LastStatusReceivedAt.Nanos))
+		if lastStatus.After(lastHeard) {
+			lastHeard = lastStatus
+		}
+	}
+	if statusIn.LastUplinkReceivedAt != nil {
+		lastUplink := time.Unix(statusIn.LastUplinkReceivedAt.Seconds, int64(statusIn.LastUplinkReceivedAt.Nanos))
+		if lastUplink.After(lastHeard) {
+			lastHeard = lastUplink
+		}
 	}
 
 	latitude := 0.0
