@@ -2,14 +2,14 @@ package thethingsstack
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
+	"os"
 	"testing"
 	"ttnmapper-postgres-insert-raw/pkg/utils"
 )
 
 func TestParseV3GatewayList(t *testing.T) {
-	buf, err := ioutil.ReadFile("gateway-list-example.json")
+	buf, err := os.ReadFile("gateway-list-example.json")
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -68,7 +68,7 @@ func TestFetchTtsNetwork(t *testing.T) {
 				if gateway.Ids.GatewayId == gatewayId {
 					log.Println(tenantId, gatewayId)
 					log.Println(utils.PrettyPrint(gateway))
-					ttnMapperGateway, err := TtsApiGatewayToTtnMapperGateway(tenantId, gateway, *status)
+					ttnMapperGateway, err := TtsApiGatewayToTtnMapperGateway(tenantId, gateway, status)
 					if err != nil {
 						log.Println(err)
 						continue

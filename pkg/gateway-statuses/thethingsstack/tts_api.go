@@ -3,6 +3,7 @@ package thethingsstack
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"go.thethings.network/lorawan-stack/v3/pkg/jsonpb"
 	"go.thethings.network/lorawan-stack/v3/pkg/ttnpb"
@@ -130,7 +131,11 @@ func FetchStatus(gateway Gateway, apiKey string) (Status, error) {
 
 }
 
-func TtsApiGatewayToTtnMapperGateway(tenantId string, gatewayIn Gateway, statusIn ttnpb.GatewayConnectionStats) (types.TtnMapperGateway, error) {
+func TtsApiGatewayToTtnMapperGateway(tenantId string, gatewayIn Gateway, statusIn *ttnpb.GatewayConnectionStats) (types.TtnMapperGateway, error) {
+
+	if statusIn == nil {
+		return types.TtnMapperGateway{}, errors.New("")
+	}
 
 	lastHeard := time.Time{}
 

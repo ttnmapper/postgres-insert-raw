@@ -351,11 +351,7 @@ func fetchTtsStatuses() {
 					// If we found the gateway, ie the id matches, update its status
 					if gateway.Ids.GatewayId == gatewayId {
 						log.Println(network.TenantId, gatewayId)
-						if status == nil {
-							continue
-						}
-
-						ttnMapperGateway, err := thethingsstack.TtsApiGatewayToTtnMapperGateway(network.TenantId, gateway, *status)
+						ttnMapperGateway, err := thethingsstack.TtsApiGatewayToTtnMapperGateway(network.TenantId, gateway, status)
 						if err != nil {
 							log.Println(err)
 							continue
