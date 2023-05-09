@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"go.thethings.network/lorawan-stack/v3/pkg/jsonpb"
+	"go.thethings.network/lorawan-stack/v3/pkg/ttnpb"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -47,7 +50,7 @@ func FetchGateways(tenantId string, apiKey string) ([]Gateway, error) {
 	return webData.Gateways, nil
 }
 
-func FetchStatusesBatch(gateways []Gateway, apiKey string) (GatewayStatsBatchResponse, error) {
+func FetchStatusesBatch(gateways []Gateway, apiKey string) (ttnpb.BatchGetGatewayConnectionStatsResponse, error) {
 	// Use gateway_server_address with endpoint
 	// /api/v3/gs/gateways/connection/stats
 
@@ -65,7 +68,7 @@ func FetchStatusesBatch(gateways []Gateway, apiKey string) (GatewayStatsBatchRes
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(postJson))
 	if err != nil {
-		return GatewayStatsBatchResponse{}, err
+		return ttnpb.BatchGetGatewayConnectionStatsResponse{}, err
 	}
 
 	req.Header.Set("User-Agent", "ttnmapper-update-gateway")
@@ -73,15 +76,21 @@ func FetchStatusesBatch(gateways []Gateway, apiKey string) (GatewayStatsBatchRes
 
 	res, err := httpClient.Do(req)
 	if err != nil {
-		return GatewayStatsBatchResponse{}, err
+		return ttnpb.BatchGetGatewayConnectionStatsResponse{}, err
 	}
 
 	defer res.Body.Close()
 
-	webData := GatewayStatsBatchResponse{}
-	err = json.NewDecoder(res.Body).Decode(&webData)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return GatewayStatsBatchResponse{}, err
+		return ttnpb.BatchGetGatewayConnectionStatsResponse{}, err
+	}
+
+	webData := ttnpb.BatchGetGatewayConnectionStatsResponse{}
+	marshaler := jsonpb.TTN()
+	err = marshaler.Unmarshal(body, &webData)
+	if err != nil {
+		return ttnpb.BatchGetGatewayConnectionStatsResponse{}, err
 	}
 	return webData, nil
 }
@@ -121,11 +130,12 @@ func FetchStatus(gateway Gateway, apiKey string) (Status, error) {
 
 }
 
-func TtsApiGatewayToTtnMapperGateway(tenantId string, gatewayIn Gateway, statusIn Status) (types.TtnMapperGateway, error) {
+func TtsApiGatewayToTtnMapperGateway(tenantId string, gatewayIn Gateway, statusIn ttnpb.GatewayConnectionStats) (types.TtnMapperGateway, error) {
 
-	lastHeard := statusIn.LastStatusReceivedAt
-	if lastHeard.Before(statusIn.LastUplinkReceivedAt) {
-		lastHeard = statusIn.LastUplinkReceivedAt
+	lastHeard := time.Unix(statusIn.LastStatusReceivedAt.Seconds, int64(statusIn.LastStatusReceivedAt.Nanos))
+	lastUplink := time.Unix(statusIn.LastUplinkReceivedAt.Seconds, int64(statusIn.LastUplinkReceivedAt.Nanos))
+	if lastHeard.Before(lastUplink) {
+		lastHeard = lastUplink
 	}
 
 	latitude := 0.0

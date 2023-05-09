@@ -96,7 +96,7 @@ type TtnMapperGateway struct {
 	LocationSource string `json:"location_source,omitempty"`
 
 	// Some sources of statuses provide the description
-	Name       string                 `json:"description,omitempty"`
+	Name       string                 `json:"name,omitempty"`
 	Attributes map[string]interface{} `json:"attributes"`
 }
 
