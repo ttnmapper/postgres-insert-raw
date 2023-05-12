@@ -395,5 +395,6 @@ func FetchPbRoutingPolicies() {
 		database.InsertOrUpdateRoutingPolicy(dbPolicy)
 	}
 
+	routingUpdates.Inc()
 	busyFetchingRouting = false
 }

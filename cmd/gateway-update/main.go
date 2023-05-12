@@ -113,6 +113,11 @@ var (
 		Buckets: []float64{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.5, 2, 5, 10, 100, 1000, 10000},
 	})
 
+	routingUpdates = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "ttnmapper_packet_broker_routes_update",
+		Help: "Count how many times we've updated the routing table",
+	})
+
 	// Other global vars
 	rawPacketsChannel = make(chan amqp.Delivery)
 )
