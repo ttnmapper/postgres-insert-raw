@@ -7,6 +7,7 @@ replace github.com/throttled/throttled/v2 => github.com/TheThingsIndustries/thro
 
 require (
 	github.com/auth0/go-jwt-middleware v1.0.1
+	github.com/bserdar/jsonstream v0.0.0-20190428032403-9f1769267072
 	github.com/deepmap/oapi-codegen v1.9.0
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
 	github.com/getkin/kin-openapi v0.87.0

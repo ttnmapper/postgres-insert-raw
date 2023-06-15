@@ -14,6 +14,9 @@ github.com/auth0/go-jwt-middleware
 # github.com/beorn7/perks v1.0.1
 ## explicit; go 1.11
 github.com/beorn7/perks/quantile
+# github.com/bserdar/jsonstream v0.0.0-20190428032403-9f1769267072
+## explicit
+github.com/bserdar/jsonstream
 # github.com/cespare/xxhash/v2 v2.2.0
 ## explicit; go 1.11
 github.com/cespare/xxhash/v2
