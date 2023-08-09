@@ -25,3 +25,12 @@ func TestGetPacketsForGateway(t *testing.T) {
 	// This should return data, but it does not
 	log.Println(utils.PrettyPrint(packets))
 }
+
+func TestGetOnlineGatewaysForNetworkInBbox(t *testing.T) {
+	initDb()
+
+	gateways := GetOnlineGatewaysForNetwork("NS_TTS_V3://ttn@000013")
+	log.Println(len(gateways), "gateways")
+	gateways = GetOnlineGatewaysForNetwork("NS_TTS_V3://ttn@000013")
+	log.Println(len(gateways), "gateways")
+}
