@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"time"
 	"ttnmapper-postgres-insert-raw/cmd/website-api/responses"
 	"ttnmapper-postgres-insert-raw/pkg/layers/radar"
 )
@@ -27,7 +28,14 @@ func GetGatewayRadarMulti(w http.ResponseWriter, r *http.Request) {
 		render.JSON(w, r, errorResponse)
 		return
 	}
+
+	// Set cache headers in the response
+	w.Header().Set("Cache-Control", "public, max-age=86400")
+	w.Header().Set("Expires", time.Now().Add(24*time.Hour).Format(http.TimeFormat))
+	w.Header().Set("Last-Modified", time.Now().UTC().Format(http.TimeFormat))
+
 	w.Header().Set("Content-Type", "application/json")
+
 	_, err = w.Write(geoJson)
 	if err != nil {
 		log.Println("could not write geojson to response")
@@ -52,7 +60,14 @@ func GetGatewayRadarSingle(w http.ResponseWriter, r *http.Request) {
 		render.JSON(w, r, errorResponse)
 		return
 	}
+
+	// Set cache headers in the response
+	w.Header().Set("Cache-Control", "public, max-age=86400")
+	w.Header().Set("Expires", time.Now().Add(24*time.Hour).Format(http.TimeFormat))
+	w.Header().Set("Last-Modified", time.Now().UTC().Format(http.TimeFormat))
+
 	w.Header().Set("Content-Type", "application/json")
+
 	_, err = w.Write(geoJson)
 	if err != nil {
 		log.Println("could not write geojson to response")

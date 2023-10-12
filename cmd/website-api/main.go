@@ -4,6 +4,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"log"
 	"net/http"
+	"time"
 	"ttnmapper-postgres-insert-raw/pkg/database"
 )
 
@@ -52,5 +53,6 @@ func main() {
 
 	// Start the http endpoint
 	log.Println("Starting server on", myConfiguration.HttpListenAddress)
-	log.Fatal(http.ListenAndServe(myConfiguration.HttpListenAddress, router))
+	routerWithTimeout := http.TimeoutHandler(router, time.Minute*1, "Handler Timeout!")
+	log.Fatal(http.ListenAndServe(myConfiguration.HttpListenAddress, routerWithTimeout))
 }
