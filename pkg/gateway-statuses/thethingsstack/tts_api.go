@@ -24,6 +24,8 @@ func FetchGateways(tenantId string, apiKey string) ([]Gateway, error) {
 		"update_location_from_status,lbs_lns_secret,claim_authentication_code,target_cups_uri,target_cups_key,"+
 		"require_authenticated_connection,lrfhss,disable_packet_broker_forwarding", tenantId)
 
+	log.Println(url)
+
 	httpClient := http.Client{
 		Timeout: time.Second * 60, // Maximum of 1 minute
 	}
@@ -60,12 +62,16 @@ func FetchStatusesBatch(gateways []Gateway, apiKey string) (ttnpb.BatchGetGatewa
 		Timeout: time.Second * 60, // Maximum of 1 minute
 	}
 
+	log.Println("URL", url)
+
 	postData := GatewayStatsBatchRequest{}
 	for _, gateway := range gateways {
 		postData.GatewayIds = append(postData.GatewayIds, gateway.Ids)
 		//postData.GatewayIds = append(postData.GatewayIds, GatewayIds{GatewayId: gateway.Ids.GatewayId})
 	}
 	postJson, err := json.Marshal(postData)
+
+	log.Println(string(postJson))
 
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(postJson))
 	if err != nil {

@@ -224,6 +224,8 @@ func fetchPacketBrokerStatuses() {
 				}
 			}
 		}
+		time.Sleep(10 * time.Second) // need to delay to prevent hitting rate limit
+
 		page++
 	}
 

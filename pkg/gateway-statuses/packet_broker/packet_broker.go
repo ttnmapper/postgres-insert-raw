@@ -48,6 +48,7 @@ func FetchStatuses(page int) ([]Openapi.Gateway, error) {
 
 	listGatewaysResponse, err := client.ListGatewaysWithResponse(context.Background(), &params)
 	if err != nil {
+		log.Println("List Gateways err", err.Error())
 		return gateways, err
 	}
 	if listGatewaysResponse.JSON200 != nil {
@@ -59,8 +60,8 @@ func FetchStatuses(page int) ([]Openapi.Gateway, error) {
 			return gateways, nil
 		}
 	} else {
-		log.Printf("%s", listGatewaysResponse.Body)
-		return gateways, errors.New("response nil")
+		log.Printf("Non-200 response: Code=%d, Body=%s", listGatewaysResponse.StatusCode(), listGatewaysResponse.Body)
+		return gateways, errors.New("non-200 response")
 	}
 }
 
