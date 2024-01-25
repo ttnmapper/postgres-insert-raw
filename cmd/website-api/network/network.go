@@ -67,7 +67,7 @@ func GetGateways(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 
-	// If not routing policies exist for this network, no gateways will be returned. So fetch for this specific network then.
+	// If no routing policies exist for this network, no gateways will be returned. So fetch for this specific network then.
 	if !selfInPeeredNetworks {
 		networkSubscription := database.GetNetworkSubscription(networkId)
 
@@ -87,20 +87,14 @@ func GetGateways(writer http.ResponseWriter, request *http.Request) {
 
 func ApplySubscription(gateway responses.Gateway, subscription database.NetworkSubscription) responses.Gateway {
 	// only include name and description if network has a subscription
-	if subscription.ID != 0 {
-		if !subscription.GatewayNames {
-			gateway.Name = ""
-		}
-		if !subscription.GatewayDescriptions {
-			if _, ok := gateway.Attributes["description"]; ok {
-				gateway.Attributes["description"] = ""
-			}
-		}
-	} else {
+	if subscription.ID == 0 || !subscription.GatewayNames {
 		networkIdPrefix, _, _ := strings.Cut(gateway.NetworkId, ":")
 		gateway.NetworkId = networkIdPrefix
 		gateway.GatewayId = ""
 		gateway.Name = ""
+	}
+
+	if subscription.ID == 0 || !subscription.GatewayDescriptions {
 		if _, ok := gateway.Attributes["description"]; ok {
 			gateway.Attributes["description"] = ""
 		}
