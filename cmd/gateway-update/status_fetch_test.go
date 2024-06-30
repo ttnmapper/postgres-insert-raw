@@ -53,9 +53,19 @@ func TestFetchHeliumSnapshot(t *testing.T) {
 	fetchHeliumSnapshot()
 }
 
+func TestFetchAllTtsStatuses(t *testing.T) {
+	initTests()
+	fetchAllTtsStatuses()
+}
+
 func TestFetchTtsStatuses(t *testing.T) {
 	initTests()
-	fetchTtsStatuses()
+	var network = database.TtsV3FetchStatus{
+		ID:       0,
+		TenantId: "handson-systems",
+		ApiKey:   "",
+	}
+	fetchTtsStatuses(network)
 }
 
 func TestFetchPbRoutingPolicies(t *testing.T) {

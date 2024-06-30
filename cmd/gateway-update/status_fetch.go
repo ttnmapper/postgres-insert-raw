@@ -134,7 +134,7 @@ func startPeriodicFetchers() {
 				}
 			case <-ttsTicker.C:
 				if myConfiguration.FetchTts {
-					go fetchTtsStatuses()
+					go fetchAllTtsStatuses()
 				}
 			case <-pbRoutingTicker.C:
 				if myConfiguration.FetchRouting {
@@ -314,7 +314,7 @@ func fetchHeliumStatuses() {
 
 var busyFetchingTtsNetworkStatuses = false
 
-func fetchTtsStatuses() {
+func fetchAllTtsStatuses() {
 	if busyFetchingTtsNetworkStatuses {
 		return
 	}
@@ -323,51 +323,58 @@ func fetchTtsStatuses() {
 	networks := database.GetAllTtsNetworksToFetch()
 
 	for _, network := range networks {
-		gatewayCount := 0
-		gateways, err := thethingsstack.FetchGateways(network.TenantId, network.ApiKey)
-		if err != nil {
-			log.Println(err.Error())
-		}
-
-		// Fetch gateway statuses in batches
-		batchSize := 50
-		for i := 0; i < len(gateways); i += batchSize {
-			log.Printf("[TTS API] Fetching batch of %d gateway statuses", batchSize)
-			endIndex := i + batchSize
-			if len(gateways) < endIndex {
-				endIndex = len(gateways)
-			}
-			currentlyFetchingGateways := gateways[i:endIndex]
-			gatewayStatuses, err := thethingsstack.FetchStatusesBatch(currentlyFetchingGateways, network.ApiKey)
-			if err != nil {
-				log.Println(err.Error())
-				continue
-			}
-			if gatewayStatuses.Entries == nil {
-				log.Println("[TTS API] Status Entries is nil")
-			}
-			// Iterate status responses
-			for gatewayId, status := range gatewayStatuses.Entries {
-				// Iterate fetched gateway list to find requested gateway's data
-				for _, gateway := range currentlyFetchingGateways {
-					// If we found the gateway, ie the id matches, update its status
-					if gateway.Ids.GatewayId == gatewayId {
-						log.Println(network.TenantId, gatewayId)
-						ttnMapperGateway, err := thethingsstack.TtsApiGatewayToTtnMapperGateway(network.TenantId, gateway, status)
-						if err != nil {
-							log.Println(err)
-							continue
-						}
-						UpdateGateway(ttnMapperGateway)
-						gatewayCount++
-					}
-				}
-			}
-		}
-		log.Printf("[TTS API] Fetched %d gateway statuses for network %s", gatewayCount, network.TenantId)
+		fetchTtsStatuses(network)
 	}
 
 	busyFetchingTtsNetworkStatuses = false
+}
+
+func fetchTtsStatuses(network database.TtsV3FetchStatus) {
+	gatewayCount := 0
+	gateways, err := thethingsstack.FetchGateways(network.TenantId, network.ApiKey)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	log.Println(utils.PrettyPrint(gateways))
+
+	// Fetch gateway statuses in batches
+	batchSize := 50
+	for i := 0; i < len(gateways); i += batchSize {
+		log.Printf("[TTS API] Fetching batch of %d gateway statuses", batchSize)
+		endIndex := i + batchSize
+		if len(gateways) < endIndex {
+			endIndex = len(gateways)
+		}
+		currentlyFetchingGateways := gateways[i:endIndex]
+		gatewayStatuses, err := thethingsstack.FetchStatusesBatch(currentlyFetchingGateways, network.ApiKey)
+		if err != nil {
+			log.Println(err.Error())
+			continue
+		}
+		if gatewayStatuses.Entries == nil {
+			log.Println("[TTS API] Status Entries is nil")
+		}
+		// Iterate status responses
+		for gatewayId, status := range gatewayStatuses.Entries {
+			// Iterate fetched gateway list to find requested gateway's data
+			for _, gateway := range currentlyFetchingGateways {
+				// If we found the gateway, ie the id matches, update its status
+				if gateway.Ids.GatewayId == gatewayId {
+					log.Println(network.TenantId, gatewayId)
+					log.Println(utils.PrettyPrint(status))
+					ttnMapperGateway, err := thethingsstack.TtsApiGatewayToTtnMapperGateway(network.TenantId, gateway, status)
+					if err != nil {
+						log.Println(err)
+						continue
+					}
+					UpdateGateway(ttnMapperGateway)
+					gatewayCount++
+				}
+			}
+		}
+	}
+	log.Printf("[TTS API] Fetched %d gateway statuses for network %s", gatewayCount, network.TenantId)
 }
 
 // Fetch routing policies from Packet Broker

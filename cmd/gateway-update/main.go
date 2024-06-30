@@ -177,7 +177,7 @@ func main() {
 			}
 			if service == "tts" {
 				log.Println("Fetching TTS network statuses")
-				fetchTtsStatuses()
+				fetchAllTtsStatuses()
 			}
 		}
 	} else {
