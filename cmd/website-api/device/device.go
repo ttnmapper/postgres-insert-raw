@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 	"ttnmapper-postgres-insert-raw/cmd/website-api/responses"
 	"ttnmapper-postgres-insert-raw/pkg/database"
@@ -45,6 +46,13 @@ func GetDeviceData(writer http.ResponseWriter, request *http.Request) {
 	}
 	log.Println("network_id", networkId)
 
+	limitStr := request.URL.Query().Get("limit")
+	limitInt, err := strconv.ParseInt(limitStr, 10, 64)
+	var limit *int64 = nil
+	if err != nil {
+		limit = &limitInt
+	}
+
 	startTimeString := request.URL.Query().Get("start_time")
 	startTimeString, err = url.QueryUnescape(startTimeString)
 	if err != nil {
@@ -77,7 +85,7 @@ func GetDeviceData(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 
-	deviceDataDbRows, err := database.GetPacketsForDevice(networkId, applicationId, deviceId, startTime, endTime, 10000)
+	deviceDataDbRows, err := database.GetPacketsForDevice(networkId, applicationId, deviceId, startTime, endTime, limit)
 	if err != nil {
 		responses.RenderError(writer, request, err)
 		return
@@ -126,6 +134,13 @@ func GetDeviceCsv(writer http.ResponseWriter, request *http.Request) {
 	}
 	log.Println("network_id", networkId)
 
+	limitStr := request.URL.Query().Get("limit")
+	limitInt, err := strconv.ParseInt(limitStr, 10, 64)
+	var limit *int64 = nil
+	if err != nil {
+		limit = &limitInt
+	}
+
 	startTimeString := request.URL.Query().Get("start_time")
 	startTimeString, err = url.QueryUnescape(startTimeString)
 	if err != nil {
@@ -158,7 +173,7 @@ func GetDeviceCsv(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 
-	deviceDataDbRows, err := database.GetPacketsForDevice(networkId, applicationId, deviceId, startTime, endTime, 10000)
+	deviceDataDbRows, err := database.GetPacketsForDevice(networkId, applicationId, deviceId, startTime, endTime, limit)
 	if err != nil {
 		responses.RenderError(writer, request, err)
 		return

@@ -18,7 +18,7 @@ func GetPacketsForAntennaAfter(antenna Antenna, afterTime time.Time) (*sql.Rows,
 	return Db.Model(&Packet{}).Where("antenna_id = ? AND time > ? AND experiment_id IS NULL", antenna.ID, afterTime).Rows() // server side cursor
 }
 
-func GetPacketsForDevice(networkId string, applicationId string, deviceId string, startTime time.Time, endTime time.Time, limit int) (*sql.Rows, error) {
+func GetPacketsForDevice(networkId string, applicationId string, deviceId string, startTime time.Time, endTime time.Time, limit *int64) (*sql.Rows, error) {
 	session := Db.Model(&Packet{})
 	session = session.Select("packets.id, packets.time, packets.f_port, packets.f_cnt, packets.gateway_time, fine_timestamp, packets.channel_index, packets.rssi, packets.signal_rssi, packets.snr, packets.latitude, packets.longitude, packets.altitude, packets.accuracy_meters, packets.satellites, packets.hdop, app_id, dev_id, dev_eui, d.network_id as device_network_id, f.herz as frequency, modulation, bandwidth, spreading_factor, bitrate, cr.name as coding_rate, a.network_id as gateway_network_id, gateway_id, antenna_index, \"as\".name as accuracy_source, ua.name as user_agent, e.name as experiment")
 	session = session.Joins("JOIN devices d on packets.device_id = d.id")
@@ -43,7 +43,9 @@ func GetPacketsForDevice(networkId string, applicationId string, deviceId string
 		session = session.Where("d.dev_id = ?", deviceId)
 	}
 
-	session = session.Limit(limit)
+	if limit != nil {
+		session = session.Limit(int(*limit))
+	}
 
 	return session.Rows()
 }
