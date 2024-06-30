@@ -30,3 +30,13 @@ func TestMigrateDb(t *testing.T) {
 	//database.AutoMigrate(&database.GridCell{}, &database.RadarBeam{})
 	database.AutoMigrate(&database.GatewayBoundingBox{})
 }
+
+func TestReprocessSingleGateway(t *testing.T) {
+	IniDb()
+
+	gateway := database.Gateway{
+		NetworkId: "NS_TTS_V3://ttn@000013",
+		GatewayId: "ttn-rhein-sieg-01",
+	}
+	ReprocessSingleGateway(gateway)
+}
