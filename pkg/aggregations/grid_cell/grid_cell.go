@@ -135,6 +135,7 @@ func ReprocessAntenna(antenna database.Antenna, installedAtLocation time.Time) {
 
 	// Then add new ones
 	log.Printf("Result is %d grid cells", len(gatewayGridCells))
+	// todo upsert as the other process could have added cells in the meantime
 	err = storeGridCellsInDb(gatewayGridCells)
 	if err != nil {
 		log.Fatalf(err.Error())
