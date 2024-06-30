@@ -25,10 +25,6 @@ func GetDeviceData(writer http.ResponseWriter, request *http.Request) {
 	var err error
 
 	deviceId := request.URL.Query().Get("dev_id")
-	if deviceId == "" {
-		responses.RenderError(writer, request, errors.New("dev_id not set"))
-		return
-	}
 	deviceId, err = url.QueryUnescape(deviceId)
 	if err != nil {
 		responses.RenderError(writer, request, err)

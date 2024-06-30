@@ -32,13 +32,15 @@ func GetPacketsForDevice(networkId string, applicationId string, deviceId string
 	session = session.Joins("LEFT JOIN experiments e on packets.experiment_id = e.id")
 
 	session = session.Where("experiment_id IS NULL")
-	session = session.Where("d.dev_id = ?", deviceId)
 	session = session.Where("time > ? AND time < ?", startTime, endTime)
 	if networkId != "" {
 		session = session.Where("d.network_id = ?", networkId)
 	}
 	if applicationId != "" {
 		session = session.Where("d.app_id = ?", applicationId)
+	}
+	if deviceId != "" {
+		session = session.Where("d.dev_id = ?", deviceId)
 	}
 
 	session = session.Limit(limit)
