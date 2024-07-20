@@ -6,6 +6,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
+	"time"
 	"ttnmapper-postgres-insert-raw/pkg/aggregations"
 	"ttnmapper-postgres-insert-raw/pkg/database"
 	"ttnmapper-postgres-insert-raw/pkg/utils"
@@ -117,12 +118,14 @@ func main() {
 func ReprocessAll(network string, offset int) {
 
 	var gateways []database.Gateway
+	slow := false
 	if network != "" {
 		log.Println("All gateways for network", network)
 		gateways = database.GetAllGatewaysForNetwork(network)
 	} else {
 		log.Println("All gateways")
 		gateways = database.GetAllGateways()
+		slow = true // if we process everything, do it slowly
 	}
 
 	for i, gateway := range gateways {
@@ -132,6 +135,9 @@ func ReprocessAll(network string, offset int) {
 		}
 		log.Println(i, "/", len(gateways), " ", gateway.NetworkId, " - ", gateway.GatewayId)
 		ReprocessSingleGateway(gateway)
+		if slow {
+			time.Sleep(1 * time.Second)
+		}
 	}
 }
 
