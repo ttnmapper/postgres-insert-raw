@@ -78,3 +78,7 @@ type ExperimentResponse struct {
 	ID   uint   `json:"id"`
 	Name string `json:"name"`
 }
+
+func TruncateToDay(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+}

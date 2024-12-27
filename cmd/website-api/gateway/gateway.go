@@ -140,5 +140,7 @@ func GetGatewayData(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 
+	result = responses.AnonymiseDeviceMeasurement(result)
+
 	render.JSON(writer, request, result)
 }

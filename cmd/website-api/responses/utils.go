@@ -97,3 +97,31 @@ func DbGatewayWithBoundingBoxToResponse(gateway database.GatewayWithBoundingBox)
 
 	return responseGw
 }
+
+func AnonymiseDeviceMeasurement(inputData []DeviceMeasurement) []DeviceMeasurement {
+	result := make([]DeviceMeasurement, 0)
+
+	for _, measurement := range inputData {
+		outputMeasurement := measurement
+
+		// Device IDs
+		outputMeasurement.DevId = "<redacted>"
+		outputMeasurement.DevEui = "<redacted>"
+		outputMeasurement.AppId = "<redacted>"
+
+		// Port, count
+		outputMeasurement.FPort = 1
+		outputMeasurement.FCnt = 1
+
+		// Time
+		outputMeasurement.Time = TruncateToDay(outputMeasurement.Time)
+		outputMeasurement.GatewayTime = TruncateToDay(outputMeasurement.GatewayTime)
+		outputMeasurement.FineTimestamp = 0
+
+		outputMeasurement.UserAgent = "<redacted>"
+
+		result = append(result, outputMeasurement)
+	}
+
+	return result
+}
