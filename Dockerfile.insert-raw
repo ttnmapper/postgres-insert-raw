@@ -1,11 +1,14 @@
-FROM golang:latest as builder
+FROM golang:latest AS builder
 
 WORKDIR /go-modules
 
 COPY . ./
 
 # Building using -mod=vendor, which will utilize the vendor directory
-RUN CGO_ENABLED=0 GOOS=linux go build -v -mod=vendor -o postgres-insert-raw ttnmapper-postgres-insert-raw/cmd/insert-raw
+RUN CGO_ENABLED=0 GOOS=linux \
+    go build -v -mod=vendor -ldflags="-w=false -s=false" \
+    -o postgres-insert-raw \
+    ttnmapper-postgres-insert-raw/cmd/insert-raw
 
 FROM scratch
 WORKDIR /root/
