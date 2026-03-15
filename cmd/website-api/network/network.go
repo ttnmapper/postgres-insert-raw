@@ -10,7 +10,7 @@ import (
 	"ttnmapper-postgres-insert-raw/cmd/website-api/responses"
 	"ttnmapper-postgres-insert-raw/pkg/database"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/j4/gosm"
 	"github.com/patrickmn/go-cache"
