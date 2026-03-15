@@ -270,3 +270,15 @@ func GetNewHeliumAntennaForOldAntenna(oldAntenna Antenna) Antenna {
 	Db.FirstOrCreate(&antenna, &antenna)
 	return antenna
 }
+
+func GetGwsForNetworkInBb(networkId string, north float64, east float64, south float64, west float64) []Gateway {
+	var gateways []Gateway
+	Db.Where("network_id = ? AND latitude >= ? AND latitude <= ? AND longitude >= ? AND longitude <= ?", networkId, south, north, west, east).Find(&gateways)
+	return gateways
+}
+
+func GetGwsInBb(north float64, east float64, south float64, west float64) []Gateway {
+	var gateways []Gateway
+	Db.Where("latitude >= ? AND latitude <= ? AND longitude >= ? AND longitude <= ?", south, north, west, east).Find(&gateways)
+	return gateways
+}

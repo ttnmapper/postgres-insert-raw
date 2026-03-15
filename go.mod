@@ -6,6 +6,7 @@ go 1.18
 replace github.com/throttled/throttled/v2 => github.com/TheThingsIndustries/throttled/v2 v2.7.1-noredis
 
 require (
+	github.com/artyom/csvstruct v1.1.0
 	github.com/auth0/go-jwt-middleware v1.0.1
 	github.com/bserdar/jsonstream v0.0.0-20190428032403-9f1769267072
 	github.com/deepmap/oapi-codegen v1.9.0

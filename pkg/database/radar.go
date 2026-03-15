@@ -12,7 +12,7 @@ func GetRadarBeam(indexer RadarBeamIndexer) (RadarBeam, error) {
 }
 
 func SaveRadarBeam(radarBeam RadarBeam) {
-	Db.Save(&radarBeam)
+	Db.Save(&radarBeam) // this could happen while a reprocess for the same gateway is happening, causing a unique index issue
 }
 
 func GetRadarBeamsForAntenna(antenna Antenna) []RadarBeam {

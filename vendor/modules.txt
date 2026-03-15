@@ -8,6 +8,9 @@ github.com/TheThingsIndustries/protoc-gen-go-flags/golang
 github.com/TheThingsIndustries/protoc-gen-go-json/annotations
 github.com/TheThingsIndustries/protoc-gen-go-json/golang
 github.com/TheThingsIndustries/protoc-gen-go-json/jsonplugin
+# github.com/artyom/csvstruct v1.1.0
+## explicit; go 1.15
+github.com/artyom/csvstruct
 # github.com/auth0/go-jwt-middleware v1.0.1
 ## explicit; go 1.14
 github.com/auth0/go-jwt-middleware

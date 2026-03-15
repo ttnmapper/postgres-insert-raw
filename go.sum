@@ -61,6 +61,8 @@ github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuy
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d/go.mod h1:rBZYJk541a8SKzHPHnH3zbiI+7dagKZ0cgpgrD7Fyho=
+github.com/artyom/csvstruct v1.1.0 h1:36e7FasmdjbWBq8F8BHC7oYFiVXyoa9+x2STca5CSyA=
+github.com/artyom/csvstruct v1.1.0/go.mod h1:eb1a0X4g5vbK6hSW/2VMaTVXw9+1lsOaF054uX6Keoo=
 github.com/auth0/go-jwt-middleware v1.0.1 h1:/fsQ4vRr4zod1wKReUH+0A3ySRjGiT9G34kypO/EKwI=
 github.com/auth0/go-jwt-middleware v1.0.1/go.mod h1:YSeUX3z6+TF2H+7padiEqNJ73Zy9vXW72U//IgN0BIM=
 github.com/aws/aws-sdk-go v1.44.186 h1:HInpD2b9FXgJIcP/WDRuSW4Wri9i5WVglO9okFFuOow=
