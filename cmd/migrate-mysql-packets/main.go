@@ -1,13 +1,14 @@
 package main
 
 import (
-	"github.com/kelseyhightower/envconfig"
 	"log"
 	"time"
 	"ttnmapper-postgres-insert-raw/pkg/database"
 	"ttnmapper-postgres-insert-raw/pkg/oldstack"
 	"ttnmapper-postgres-insert-raw/pkg/types"
 	"ttnmapper-postgres-insert-raw/pkg/utils"
+
+	"github.com/kelseyhightower/envconfig"
 )
 
 type Configuration struct {

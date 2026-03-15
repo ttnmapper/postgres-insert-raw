@@ -2,14 +2,15 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/streadway/amqp"
-	"github.com/umahmood/haversine"
 	"log"
 	"math"
 	"time"
 	"ttnmapper-postgres-insert-raw/pkg/database"
 	"ttnmapper-postgres-insert-raw/pkg/types"
 	"ttnmapper-postgres-insert-raw/pkg/utils"
+
+	"github.com/streadway/amqp"
+	"github.com/umahmood/haversine"
 )
 
 func processRawPackets() {

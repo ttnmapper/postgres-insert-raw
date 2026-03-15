@@ -2,8 +2,6 @@ package gateway
 
 import (
 	"errors"
-	"github.com/go-chi/chi"
-	"github.com/go-chi/render"
 	"log"
 	"net/http"
 	"net/url"
@@ -11,6 +9,9 @@ import (
 	"time"
 	"ttnmapper-postgres-insert-raw/cmd/website-api/responses"
 	"ttnmapper-postgres-insert-raw/pkg/database"
+
+	"github.com/go-chi/chi"
+	"github.com/go-chi/render"
 )
 
 func Routes() *chi.Mux {

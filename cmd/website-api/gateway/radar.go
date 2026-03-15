@@ -1,14 +1,15 @@
 package gateway
 
 import (
-	"github.com/go-chi/chi"
-	"github.com/go-chi/render"
 	"log"
 	"net/http"
 	"net/url"
 	"time"
 	"ttnmapper-postgres-insert-raw/cmd/website-api/responses"
 	"ttnmapper-postgres-insert-raw/pkg/layers/radar"
+
+	"github.com/go-chi/chi"
+	"github.com/go-chi/render"
 )
 
 func GetGatewayRadarMulti(w http.ResponseWriter, r *http.Request) {

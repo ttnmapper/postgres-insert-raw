@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/go-chi/render"
 	"net/http"
 	"ttnmapper-postgres-insert-raw/cmd/website-api/responses"
+
+	"github.com/go-chi/render"
 )
 
 /*

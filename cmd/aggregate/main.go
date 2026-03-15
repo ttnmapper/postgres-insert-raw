@@ -2,14 +2,15 @@ package main
 
 import (
 	"flag"
-	"github.com/kelseyhightower/envconfig"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
 	"time"
 	"ttnmapper-postgres-insert-raw/pkg/aggregations"
 	"ttnmapper-postgres-insert-raw/pkg/database"
 	"ttnmapper-postgres-insert-raw/pkg/utils"
+
+	"github.com/kelseyhightower/envconfig"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Configuration struct {

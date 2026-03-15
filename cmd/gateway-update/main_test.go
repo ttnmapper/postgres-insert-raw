@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/kelseyhightower/envconfig"
 	"log"
 	"testing"
 	"ttnmapper-postgres-insert-raw/pkg/database"
+
+	"github.com/kelseyhightower/envconfig"
 )
 
 func TestMigrateDatabase(t *testing.T) {

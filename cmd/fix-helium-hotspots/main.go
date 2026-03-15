@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/kelseyhightower/envconfig"
-	apt "github.com/ormembaar/angry-purple-tiger"
 	"log"
 	"ttnmapper-postgres-insert-raw/pkg/database"
+
+	"github.com/kelseyhightower/envconfig"
+	apt "github.com/ormembaar/angry-purple-tiger"
 )
 
 /*

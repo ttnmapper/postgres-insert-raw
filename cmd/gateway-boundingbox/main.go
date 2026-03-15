@@ -2,12 +2,13 @@ package main
 
 import (
 	"flag"
-	"github.com/kelseyhightower/envconfig"
-	"github.com/streadway/amqp"
-	"gorm.io/gorm/clause"
 	"log"
 	"ttnmapper-postgres-insert-raw/pkg/database"
 	"ttnmapper-postgres-insert-raw/pkg/utils"
+
+	"github.com/kelseyhightower/envconfig"
+	"github.com/streadway/amqp"
+	"gorm.io/gorm/clause"
 )
 
 type Configuration struct {

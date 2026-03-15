@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/kelseyhightower/envconfig"
-	"github.com/umahmood/haversine"
 	"log"
 	"ttnmapper-postgres-insert-raw/pkg/database"
+
+	"github.com/kelseyhightower/envconfig"
+	"github.com/umahmood/haversine"
 )
 
 /*

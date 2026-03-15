@@ -3,11 +3,12 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	jwtmiddleware "github.com/auth0/go-jwt-middleware"
-	"github.com/form3tech-oss/jwt-go"
 	"net/http"
 	"strconv"
 	"strings"
+
+	jwtmiddleware "github.com/auth0/go-jwt-middleware"
+	"github.com/form3tech-oss/jwt-go"
 )
 
 type Jwks struct {

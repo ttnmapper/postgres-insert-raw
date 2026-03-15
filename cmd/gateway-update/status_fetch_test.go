@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/kelseyhightower/envconfig"
 	"log"
 	"testing"
 	"ttnmapper-postgres-insert-raw/pkg/database"
 	"ttnmapper-postgres-insert-raw/pkg/utils"
+
+	"github.com/kelseyhightower/envconfig"
 )
 
 func initTests() {

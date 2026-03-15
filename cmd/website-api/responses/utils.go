@@ -2,9 +2,10 @@ package responses
 
 import (
 	"encoding/json"
-	"github.com/go-chi/render"
 	"net/http"
 	"ttnmapper-postgres-insert-raw/pkg/database"
+
+	"github.com/go-chi/render"
 )
 
 func RenderError(writer http.ResponseWriter, request *http.Request, err error) {

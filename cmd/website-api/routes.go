@@ -2,16 +2,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
-	"github.com/go-chi/cors"
-	"github.com/go-chi/render"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"ttnmapper-postgres-insert-raw/cmd/website-api/device"
 	"ttnmapper-postgres-insert-raw/cmd/website-api/experiment"
 	"ttnmapper-postgres-insert-raw/cmd/website-api/gateway"
 	"ttnmapper-postgres-insert-raw/cmd/website-api/network"
+
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/cors"
+	"github.com/go-chi/render"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func Routes() *chi.Mux {

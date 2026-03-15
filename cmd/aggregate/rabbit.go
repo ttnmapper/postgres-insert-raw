@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/streadway/amqp"
 	"log"
 	"ttnmapper-postgres-insert-raw/pkg/utils"
+
+	"github.com/streadway/amqp"
 )
 
 var (

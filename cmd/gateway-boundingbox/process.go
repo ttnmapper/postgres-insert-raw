@@ -2,12 +2,13 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/patrickmn/go-cache"
 	"log"
 	"time"
 	"ttnmapper-postgres-insert-raw/pkg/database"
 	"ttnmapper-postgres-insert-raw/pkg/types"
 	"ttnmapper-postgres-insert-raw/pkg/utils"
+
+	"github.com/patrickmn/go-cache"
 )
 
 var (

@@ -2,12 +2,13 @@ package experiment
 
 import (
 	"errors"
-	"github.com/go-chi/chi"
-	"github.com/go-chi/render"
 	"net/http"
 	"time"
 	"ttnmapper-postgres-insert-raw/cmd/website-api/responses"
 	"ttnmapper-postgres-insert-raw/pkg/database"
+
+	"github.com/go-chi/chi"
+	"github.com/go-chi/render"
 )
 
 func Routes() *chi.Mux {

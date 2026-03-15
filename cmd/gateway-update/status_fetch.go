@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/streadway/amqp"
 	"log"
 	"os"
 	"time"
@@ -12,6 +11,8 @@ import (
 	"ttnmapper-postgres-insert-raw/pkg/gateway-statuses/thethingsstack"
 	"ttnmapper-postgres-insert-raw/pkg/gateway-statuses/web"
 	"ttnmapper-postgres-insert-raw/pkg/utils"
+
+	"github.com/streadway/amqp"
 )
 
 func subscribeToRabbitRaw() {

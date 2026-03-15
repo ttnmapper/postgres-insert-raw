@@ -2,11 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/kelseyhightower/envconfig"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/streadway/amqp"
 	"log"
 	"net/http"
 	"time"
@@ -14,6 +9,12 @@ import (
 	"ttnmapper-postgres-insert-raw/pkg/queues"
 	"ttnmapper-postgres-insert-raw/pkg/types"
 	"ttnmapper-postgres-insert-raw/pkg/utils"
+
+	"github.com/kelseyhightower/envconfig"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/streadway/amqp"
 )
 
 type Configuration struct {

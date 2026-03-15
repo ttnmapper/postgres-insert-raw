@@ -1,10 +1,6 @@
 package network
 
 import (
-	"github.com/go-chi/chi"
-	"github.com/go-chi/render"
-	"github.com/j4/gosm"
-	"github.com/patrickmn/go-cache"
 	"log"
 	"net/http"
 	"net/url"
@@ -13,6 +9,11 @@ import (
 	"time"
 	"ttnmapper-postgres-insert-raw/cmd/website-api/responses"
 	"ttnmapper-postgres-insert-raw/pkg/database"
+
+	"github.com/go-chi/chi"
+	"github.com/go-chi/render"
+	"github.com/j4/gosm"
+	"github.com/patrickmn/go-cache"
 )
 
 var (

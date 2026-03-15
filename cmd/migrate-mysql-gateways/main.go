@@ -7,10 +7,11 @@ ssh -L 3306:127.0.0.1:3306 root@ttnmapper.org
 */
 
 import (
-	"github.com/kelseyhightower/envconfig"
 	"log"
 	"ttnmapper-postgres-insert-raw/pkg/database"
 	"ttnmapper-postgres-insert-raw/pkg/oldstack"
+
+	"github.com/kelseyhightower/envconfig"
 )
 
 type Configuration struct {
